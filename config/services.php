@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'ampi' => [
+        'api_key' => env('AMPI_API_KEY'),
+    ],
+
 ];

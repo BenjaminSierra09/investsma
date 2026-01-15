@@ -7,11 +7,22 @@
         "dev": "vite"
     },
     "dependencies": {
+        "@editorjs/editorjs": "^2.31.1",
+        "@editorjs/embed": "^2.7.7",
+        "@editorjs/header": "^2.8.8",
+        "@editorjs/image": "^2.10.3",
+        "@editorjs/list": "^2.0.9",
+        "@editorjs/quote": "^2.7.6",
+        "@simplewebauthn/browser": "^13.2.2",
         "@tailwindcss/vite": "^4.1.11",
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.4",
         "concurrently": "^9.0.1",
+        "editorjs-youtube-tool": "^0.0.5",
         "laravel-vite-plugin": "^2.0",
+        "leaflet": "^1.9.4",
+        "photoswipe": "^5.4.4",
+        "swiper": "^12.0.3",
         "tailwindcss": "^4.0.7",
         "vite": "^7.0.4"
     },
@@ -19,5 +30,8 @@
         "@rollup/rollup-linux-x64-gnu": "4.9.5",
         "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
         "lightningcss-linux-x64-gnu": "^1.29.1"
+    },
+    "devDependencies": {
+        "@hammaadhrasheedh/editorjs-iframe": "^1.0.21"
     }
 }

@@ -120,6 +120,9 @@ new class extends Component {
             </div>
         </form>
 
+
+        <livewire:passkeys />
+
         @if ($this->showDeleteUser)
             <livewire:pages::settings.delete-user-form />
         @endif

@@ -1,0 +1,229 @@
+<?php
+
+use App\Models\MenuItem;
+use App\Models\Page;
+use App\Support\StaticPageRegistry;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
+use Livewire\Component;
+
+new class extends Component {
+    public string $menu = 'main';
+
+    /** @var array<int, array<string, mixed>> */
+    public array $items = [];
+
+    public function mount(): void
+    {
+        $this->loadItems();
+    }
+
+    #[On('menu-add-item')]
+    public function addItem(): void
+    {
+        $this->items[] = [
+            'id' => null,
+            'temp_id' => (string) Str::uuid(),
+            'parent_temp_id' => null,
+            'label' => 'Nuevo',
+            'type' => 'page',
+            'page_id' => null,
+            'static_key' => null,
+            'url' => null,
+            'order' => count($this->items),
+        ];
+    }
+
+    public function removeItem(string $tempId): void
+    {
+        $this->items = collect($this->items)
+            ->reject(fn ($item) => $item['temp_id'] === $tempId || $item['parent_temp_id'] === $tempId)
+            ->values()
+            ->all();
+    }
+
+    public function loadItems(): void
+    {
+        $rows = MenuItem::forMenu($this->menu)->get();
+        $tempMap = [];
+
+        foreach ($rows as $row) {
+            $tempMap[$row->id] = (string) Str::uuid();
+        }
+
+        $this->items = $rows->map(function (MenuItem $item) use ($tempMap) {
+            return [
+                'id' => $item->id,
+                'temp_id' => $tempMap[$item->id],
+                'parent_temp_id' => $item->parent_id ? $tempMap[$item->parent_id] ?? null : null,
+                'label' => $item->label,
+                'type' => $item->type,
+                'page_id' => $item->page_id,
+                'static_key' => $item->static_key,
+                'url' => $item->url,
+                'order' => $item->order,
+            ];
+        })->values()->all();
+    }
+
+    public function save(): void
+    {
+        $this->validate([
+            'items' => 'array',
+            'items.*.label' => 'required|string',
+            'items.*.type' => 'required|in:page,static,url',
+            'items.*.page_id' => 'nullable|exists:pages,id',
+            'items.*.static_key' => 'nullable|string',
+            'items.*.url' => 'nullable|string',
+            'items.*.parent_temp_id' => 'nullable|string',
+        ]);
+
+        $ordered = collect($this->items)->sortBy('order')->values();
+
+        DB::transaction(function () use ($ordered) {
+            $existingIds = MenuItem::forMenu($this->menu)->pluck('id');
+            $keepIds = $ordered->pluck('id')->filter();
+            $toDelete = $existingIds->diff($keepIds);
+
+            if ($toDelete->isNotEmpty()) {
+                MenuItem::whereIn('id', $toDelete)->delete();
+            }
+
+            $idMap = [];
+
+            foreach ($ordered as $index => $item) {
+                $model = $item['id'] ? MenuItem::find($item['id']) : new MenuItem();
+
+                $model->fill([
+                    'menu' => $this->menu,
+                    'label' => $item['label'],
+                    'type' => $item['type'],
+                    'page_id' => $item['type'] === 'page' ? $item['page_id'] : null,
+                    'static_key' => $item['type'] === 'static' ? $item['static_key'] : null,
+                    'url' => $item['type'] === 'url' ? $item['url'] : null,
+                    'order' => $index,
+                ]);
+
+                $model->parent_id = null;
+                $model->save();
+
+                $idMap[$item['temp_id']] = $model->id;
+            }
+
+            foreach ($ordered as $item) {
+                $parentId = $item['parent_temp_id'] ? ($idMap[$item['parent_temp_id']] ?? null) : null;
+                $model = MenuItem::find($idMap[$item['temp_id']] ?? null);
+
+                if ($model && $model->parent_id !== $parentId) {
+                    $model->parent_id = $parentId;
+                    $model->save();
+                }
+            }
+        });
+
+        $this->loadItems();
+        $this->dispatch('notify', title: 'Menú guardado', body: 'Actualizamos el menú principal.');
+
+        $this->redirectRoute('cms.menus', navigate: true);
+    }
+
+    #[Computed]
+    public function availablePages()
+    {
+        return Page::orderBy('title')->get();
+    }
+
+    #[Computed]
+    public function staticOptions()
+    {
+        return StaticPageRegistry::options();
+    }
+}; ?>
+
+<div class="p-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="text-sm font-semibold text-zinc-800 dark:text-zinc-50">Editar menú principal</div>
+            <p class="text-xs text-zinc-500">Agrega, ordena y anida elementos.</p>
+        </div>
+        <flux:button icon="plus" variant="primary" wire:click="addItem">Agregar elemento</flux:button>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="text-left text-zinc-500">
+                <tr>
+                    <th class="px-3 py-2">Etiqueta</th>
+                    <th class="px-3 py-2">Tipo</th>
+                    <th class="px-3 py-2">Destino</th>
+                    <th class="px-3 py-2">Padre</th>
+                    <th class="px-3 py-2">Orden</th>
+                    <th class="px-3 py-2"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-100">
+                @forelse ($items as $index => $item)
+                    <tr class="align-top">
+                        <td class="px-3 py-3">
+                            <flux:input wire:model.live="items.{{ $index }}.label" size="sm" />
+                        </td>
+                        <td class="px-3 py-3">
+                            <flux:select wire:model.live="items.{{ $index }}.type" size="sm">
+                                <option value="page">Página (Editor)</option>
+                                <option value="static">Página fija</option>
+                                <option value="url">Enlace externo</option>
+                            </flux:select>
+                        </td>
+                        <td class="px-3 py-3 space-y-2">
+                            @if ($item['type'] === 'page')
+                                <flux:select wire:model.live="items.{{ $index }}.page_id" size="sm">
+                                    <option value="">Selecciona una página</option>
+                                    @foreach ($this->availablePages as $page)
+                                        <option value="{{ $page->id }}">{{ $page->title }}</option>
+                                    @endforeach
+                                </flux:select>
+                            @elseif ($item['type'] === 'static')
+                                <flux:select wire:model.live="items.{{ $index }}.static_key" size="sm">
+                                    <option value="">Selecciona</option>
+                                    @foreach ($this->staticOptions as $option)
+                                        <option value="{{ $option['key'] }}">{{ $option['label'] }}</option>
+                                    @endforeach
+                                </flux:select>
+                            @else
+                                <flux:input wire:model.live="items.{{ $index }}.url" size="sm" placeholder="https://" />
+                            @endif
+                        </td>
+                        <td class="px-3 py-3">
+                            <flux:select wire:model.live="items.{{ $index }}.parent_temp_id" size="sm">
+                                <option value="">Sin padre</option>
+                                @foreach ($items as $maybeParent)
+                                    @if ($maybeParent['temp_id'] !== $item['temp_id'])
+                                        <option value="{{ $maybeParent['temp_id'] }}">{{ $maybeParent['label'] }}</option>
+                                    @endif
+                                @endforeach
+                            </flux:select>
+                        </td>
+                        <td class="px-3 py-3">
+                            <flux:input wire:model.live="items.{{ $index }}.order" type="number" size="sm" />
+                        </td>
+                        <td class="px-3 py-3 text-right">
+                            <flux:button icon="trash" size="xs" variant="ghost" wire:click="removeItem('{{ $item['temp_id'] }}')" />
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-3 py-4 text-center text-sm text-zinc-500">Agrega elementos para construir el menú.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-6 flex items-center gap-3">
+        <flux:button variant="primary" wire:click="save">Guardar menú</flux:button>
+        <flux:button variant="ghost" wire:click="loadItems">Descartar cambios</flux:button>
+        <flux:button variant="ghost" :href="route('cms.menus')" wire:navigate>Volver</flux:button>
+    </div>
+</div>

@@ -13,6 +13,12 @@
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:navbar.item>
+                <flux:navbar.item icon="document-text" :href="route('cms.pages')" :current="request()->routeIs('cms.pages')" wire:navigate>
+                    {{ __('Páginas') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="list-bullet" :href="route('cms.menus')" :current="request()->routeIs('cms.menus')" wire:navigate>
+                    {{ __('Menú') }}
+                </flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />
@@ -56,6 +62,12 @@
                     <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard')  }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="document-text" :href="route('cms.pages')" :current="request()->routeIs('cms.pages')" wire:navigate>
+                        {{ __('Páginas') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="list-bullet" :href="route('cms.menus')" :current="request()->routeIs('cms.menus')" wire:navigate>
+                        {{ __('Menú principal') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
@@ -72,6 +84,10 @@
         </flux:sidebar>
 
         {{ $slot }}
+
+        @persist('toast')
+            <flux:toast />
+        @endpersist
 
         @fluxScripts
     </body>

@@ -1,0 +1,38 @@
+:root {
+    --gallery-bg: #f8f8f8;
+}
+
+#property-gallery {
+    background: var(--gallery-bg);
+}
+
+.gallery-loading {
+    transition: opacity 0.3s ease;
+}
+
+/* Keep eager images visible; only fade lazy ones */
+.gallery-main img[data-src] {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.gallery-main img.loaded {
+    opacity: 1;
+}
+
+.fullscreen-btn,
+.main-prev,
+.main-next,
+.thumb-prev,
+.thumb-next {
+    backdrop-filter: blur(6px);
+}
+
+.img-fade-in {
+    opacity: 0;
+}
+
+.img-fade-in.loaded {
+    opacity: 1;
+    transition: opacity 0.4s ease;
+}
