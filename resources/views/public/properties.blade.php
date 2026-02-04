@@ -282,7 +282,7 @@
                     <p class="text-gray-600 mb-6">{{ __('Contact us for more information') }}</p>
 
                     <div class="space-y-4">
-                        <a href="tel:+524151545106"
+                        <a href="tel:+524151255042"
                             class="block w-full px-6 py-3 bg-orange-600 text-white text-center font-semibold rounded-lg hover:bg-orange-700 transition-colors">
                             <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path
@@ -292,7 +292,7 @@
                             {{ __('Call Us') }}
                         </a>
 
-                        <a href="mailto:sales@cdrsanmiguel.com"
+                        <a href="mailto:info@investsma.com"
                             class="block w-full px-6 py-3 bg-gray-100 text-gray-900 text-center font-semibold rounded-lg hover:bg-gray-200 transition-colors">
                             <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>

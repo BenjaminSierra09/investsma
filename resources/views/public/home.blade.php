@@ -17,7 +17,7 @@
                     {{ __('Real estate investment in San Miguel de Allende') }}
                 </div>
                 <h1 class="text-4xl font-semibold leading-tight text-zinc-900 lg:text-5xl">
-                    {{ __('Curated properties to live in and grow your equity.') }}
+                    {{ __('Carefully selected properties to live in and grow your wealth') }}
                 </h1>
                 <p class="text-lg text-zinc-700 leading-relaxed">
                     {{ __('We source homes, lots, and developments with proven value, negotiate on your behalf, and coordinate the legal process so you can invest confidently.') }}
@@ -144,7 +144,7 @@
                     <h2 class="text-2xl font-semibold text-zinc-900">{{ __('Curated inventory') }}</h2>
                     <p class="text-sm text-zinc-600">{{ __('Browse the office portfolio in real time.') }}</p>
                 </div>
-                <a href="{{ route('properties.index') }}" class="hidden text-sm font-semibold text-amber-700 hover:text-amber-800 md:inline-flex">{{ __('See all') }} →</a>
+                <a href="{{ route('properties.index', ['office_id' => 32]) }}" class="hidden text-sm font-semibold text-amber-700 hover:text-amber-800 md:inline-flex">{{ __('See all') }} →</a>
             </div>
 
             @php
@@ -284,7 +284,7 @@
         <div class="rounded-[28px] bg-zinc-900 px-8 py-10 text-white shadow-xl">
             <div class="grid gap-8 lg:grid-cols-2 lg:items-center">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.3em] text-amber-200">{{ __('Let\'s talk') }}</p>
+                    <p class="text-sm font-semibold uppercase tracking-[0.3em] text-amber-600">{{ __('Let\'s talk') }}</p>
                     <h2 class="mt-3 text-3xl font-semibold">{{ __('Tell us what you are looking for and we will prepare a shortlist in 48h.') }}</h2>
                     <p class="mt-3 text-sm text-zinc-200">{{ __('We share the best options based on your goal: living, vacation rental, or medium-term appreciation.') }}</p>
                 </div>

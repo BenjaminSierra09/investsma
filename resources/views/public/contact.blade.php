@@ -12,8 +12,7 @@
                     </div>
                 @endif
 
-                <form class="mt-6 space-y-4" method="POST" action="{{ route('contact.submit') }}">
-                    @csrf
+                <form id="contact-mailto" class="mt-6 space-y-4">
                     <div>
                         <label class="text-sm font-semibold text-zinc-800">{{ __('Full name') }}</label>
                         <input name="nombre" value="{{ old('nombre') }}" required class="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200" placeholder="{{ __('Maria Lopez') }}" />
@@ -45,13 +44,12 @@
                 </form>
             </div>
             <div class="rounded-[28px] bg-zinc-900 p-8 text-white shadow-xl">
-                <div class="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200">{{ __('Office') }}</div>
+                <div class="text-sm font-semibold uppercase tracking-[0.25em] text-amber-600">{{ __('Office') }}</div>
                 <p class="mt-3 text-xl font-semibold">{{ __('San Miguel de Allende') }}</p>
                 <p class="mt-2 text-sm text-zinc-200">{{ __('Historic center and Golden Corridor') }}</p>
                 <div class="mt-6 space-y-3 text-sm text-zinc-200">
-                    <div>{{ __('Phone (English)') }}: <a href="tel:+524151793155" class="text-amber-200">+52 415 179 3155</a></div>
-                    <div>{{ __('Phone (Spanish)') }}: <a href="tel:+524151230502" class="text-amber-200">+52 415 123 0502</a></div>
-                    <div>{{ __('Email') }}: <a href="mailto:info@investsma.com" class="text-amber-200">info@investsma.com</a></div>
+                    <div>{{ __('Phone') }}: <a href="tel:+524151255042" class="text-amber-600">+52 415 125 5042</a></div>
+                    <div>{{ __('Email') }}: <a href="mailto:info@investsma.com" class="text-amber-600">info@investsma.com</a></div>
                     <div>{{ __('Schedule a visit by appointment.') }}</div>
                 </div>
                 <div class="mt-10 grid gap-4 sm:grid-cols-2">
@@ -67,4 +65,35 @@
             </div>
         </div>
     </section>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("contact-mailto");
+            if (!form) return;
+
+            form.addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                const name = form.elements["nombre"].value.trim();
+                const email = form.elements["email"].value.trim();
+                const phone = form.elements["telefono"].value.trim();
+                const goal = form.elements["objetivo"].value.trim();
+                const message = form.elements["mensaje"].value.trim();
+
+                const subject = encodeURIComponent("New inquiry from investsma.com");
+                const bodyLines = [
+                    `Name: ${name || "N/A"}`,
+                    `Email: ${email || "N/A"}`,
+                    `Phone: ${phone || "N/A"}`,
+                    `Goal: ${goal || "N/A"}`,
+                    "",
+                    message || "Message not provided.",
+                ];
+
+                const body = encodeURIComponent(bodyLines.join("\n"));
+                const mailto = `mailto:info@investsma.com?subject=${subject}&body=${body}`;
+                window.location.href = mailto;
+            });
+        });
+    </script>
 </x-layouts.public>

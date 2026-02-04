@@ -102,10 +102,9 @@
                     <div>
                         <div class="text-sm font-semibold text-zinc-800">Contacto</div>
                         <div class="mt-3 space-y-2 text-sm text-zinc-600">
-                            <div>{{ __('Phone (English)') }}: <a href="tel:+524151793155" class="text-amber-200">+52 415 179 3155</a></div>
-                            <div>{{ __('Phone (Spanish)') }}: <a href="tel:+524151230502" class="text-amber-200">+52 415 123 0502</a></div>
-                            <div>{{ __('Email') }}: <a href="mailto:info@investsma.com" class="text-amber-200">info@investsma.com</a></div>
-                        </div> 
+                            <div>{{ __('Phone') }}: <a href="tel:+524151255042" class="text-amber-600">+52 415 125 5042</a></div>
+                            <div>{{ __('Email') }}: <a href="mailto:info@investsma.com" class="text-amber-600">info@investsma.com</a></div>
+                        </div>
                     </div>
                     <div>
                         <div class="text-sm font-semibold text-zinc-800">Explora</div>

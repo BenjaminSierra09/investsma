@@ -10,11 +10,11 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
 use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
-
+use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable implements HasPasskeys
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, InteractsWithPasskeys;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, InteractsWithPasskeys, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.

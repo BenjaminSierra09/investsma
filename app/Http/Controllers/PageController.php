@@ -28,6 +28,8 @@ class PageController extends Controller
             'price_max',
             'bedrooms',
             'bathrooms',
+            'page',
+            'per_page',
         ]);
 
         return view('public.home', [
