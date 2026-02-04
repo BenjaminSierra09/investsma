@@ -187,8 +187,13 @@
                                         @endif
                                     </div>
 
-                                    @if (! empty($property['description_short_es']) || ! empty($property['description_short_en']))
-                                        <p class="text-sm text-zinc-600 line-clamp-3">{{ $property['description_short_es'] ?? $property['description_short_en'] }}</p>
+                                    @php
+                                        $rawDescription = $property['description_short_es'] ?? $property['description_short_en'] ?? null;
+                                        $cleanDescription = $rawDescription ? strip_tags($rawDescription, '<br><br/>') : null;
+                                    @endphp
+
+                                    @if (! empty($cleanDescription))
+                                        <p class="text-sm text-zinc-600 line-clamp-3">{!! $cleanDescription !!}</p>
                                     @endif
 
                                     <div class="flex justify-end">

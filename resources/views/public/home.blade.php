@@ -185,7 +185,16 @@
                                     <span class="rounded-full bg-amber-50 px-2 py-1">{{ $property['construction_meters'] }} {{ __('sqm') }}</span>
                                 @endif
                             </div>
-                            <p class="text-sm text-zinc-600 line-clamp-2">{{ $property['description_short_es'] ?? $property['description_short_en'] ?? __('Check more details in the listing.') }}</p>
+                            @php
+                                $rawDescription = $property['description_short_es'] ?? $property['description_short_en'] ?? null;
+                                $cleanDescription = $rawDescription ? strip_tags($rawDescription, '<br><br/>') : null;
+                            @endphp
+
+                            @if (! empty($cleanDescription))
+                                <p class="text-sm text-zinc-600 line-clamp-2">{!! $cleanDescription !!}</p>
+                            @else
+                                <p class="text-sm text-zinc-600 line-clamp-2">{{ __('Check more details in the listing.') }}</p>
+                            @endif
                             <div class="pt-1">
                                 <a
                                     href="{{ route('properties.show', ['mlsId' => $property['mls_id'] ?? $property['id'] ?? null, 'slug' => Str::slug($property['name'] ?? __('property'))]) }}"

@@ -7,8 +7,8 @@
 @endphp
 
 <script>
-    window.latitude = {{ json_encode($latitude) }};
-    window.longitude = {{ json_encode($longitude) }};
+    window.latitude = {!! $latitude !== null ? json_encode((float) $latitude) : 'null' !!};
+    window.longitude = {!! $longitude !== null ? json_encode((float) $longitude) : 'null' !!};
 </script>
 
 <!-- Property Gallery Section - Full Width -->
