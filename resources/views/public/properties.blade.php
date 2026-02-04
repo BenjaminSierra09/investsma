@@ -203,8 +203,13 @@
                                 $locale === 'es' && !empty($property['description_full_es'])
                                     ? $property['description_full_es']
                                     : $property['description_full_en'];
+                            $cleanDescription = $description ? strip_tags($description, '<br><br/>') : null;
                         @endphp
-                        {!! nl2br(e($description)) !!}
+                        @if (! empty($cleanDescription))
+                            {!! $cleanDescription !!}
+                        @else
+                            <p>{{ __('Check more details in the listing.') }}</p>
+                        @endif
                     </div>
                 </div>
 
