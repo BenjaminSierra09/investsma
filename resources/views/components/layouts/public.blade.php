@@ -94,7 +94,7 @@
             </main>
 
             <footer class="mt-20 bg-white/80 backdrop-blur-xl border-t border-amber-100">
-                <div class="mx-auto max-w-6xl px-6 py-10 grid gap-8 md:grid-cols-3">
+                <div class="mx-auto max-w-6xl px-6 py-10 grid gap-8 md:grid-cols-4">
                     <div>
                         <div class="flex items-center gap-2 text-lg font-semibold">investsma</div>
                         <p class="mt-2 text-sm text-zinc-600">Acompañamos tu inversión inmobiliaria en San Miguel de Allende con asesoría local y criterios de plusvalía.</p>
@@ -105,6 +105,17 @@
                             <div>{{ __('Phone') }}: <a href="tel:+524151255042" class="text-amber-600">+52 415 125 5042</a></div>
                             <div>{{ __('Email') }}: <a href="mailto:info@investsma.com" class="text-amber-600">info@investsma.com</a></div>
                         </div>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-zinc-800">Redes sociales</div>
+                        <ul class="mt-3 space-y-2 text-sm text-zinc-600">
+                            <li><a href="https://investsma.com/" class="hover:text-amber-700" target="_blank" rel="noopener noreferrer">Web</a></li>
+                            <li><a href="https://www.facebook.com/InvestSMA.InvestSMA" class="hover:text-amber-700" target="_blank" rel="noopener noreferrer">Facebook</a></li>
+                            <li><a href="https://www.instagram.com/investsma" class="hover:text-amber-700" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+                            <li><a href="https://www.tiktok.com/@invest.sma" class="hover:text-amber-700" target="_blank" rel="noopener noreferrer">TikTok</a></li>
+                            <li><a href="https://www.youtube.com/channel/UCqqYbt1tC631RanLj31dWxg" class="hover:text-amber-700" target="_blank" rel="noopener noreferrer">YouTube</a></li>
+                            <li><a href="https://www.linkedin.com/in/investsma" class="hover:text-amber-700" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+                        </ul>
                     </div>
                     <div>
                         <div class="text-sm font-semibold text-zinc-800">Explora</div>
