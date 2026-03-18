@@ -6,18 +6,16 @@
     <body class="bg-gradient-to-br from-[#f6efe7] via-[#f9f7f3] to-[#f1e6d9] text-zinc-900 min-h-screen antialiased">
         @php
             $menuItems = \App\Models\MenuItem::tree('main');
+            $mapMenuItem = function ($item) use (&$mapMenuItem) {
+                return (object) [
+                    'label' => $item->label,
+                    'url' => $item->resolvedUrl() ?? '#',
+                    'children' => $item->children->map(fn ($child) => $mapMenuItem($child)),
+                ];
+            };
+
             $items = $menuItems->isNotEmpty()
-                ? $menuItems->map(function ($item) {
-                    return (object) [
-                        'label' => $item->label,
-                        'url' => $item->resolvedUrl() ?? '#',
-                        'children' => $item->children->map(fn ($child) => (object) [
-                            'label' => $child->label,
-                            'url' => $child->resolvedUrl() ?? '#',
-                            'children' => collect(),
-                        ]),
-                    ];
-                })
+                ? $menuItems->map(fn ($item) => $mapMenuItem($item))
                 : \App\Support\StaticPageRegistry::all()->map(fn ($page) => (object) [
                     'label' => $page['title'],
                     'url' => url($page['url']),
@@ -44,9 +42,10 @@
                                 @if ($item->children->isNotEmpty())
                                     <div class="absolute left-0 mt-2 min-w-[200px] rounded-xl bg-white shadow-lg ring-1 ring-zinc-200 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition origin-top">
                                         <div class="p-2 space-y-1">
-                                            @foreach ($item->children as $child)
-                                                <a href="{{ $child->url }}" class="block rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-amber-50 hover:text-amber-800">{{ $child->label }}</a>
-                                            @endforeach
+                                            @include('partials.navigation.desktop-branch', [
+                                                'items' => $item->children,
+                                                'level' => 0,
+                                            ])
                                         </div>
                                     </div>
                                 @endif
@@ -115,12 +114,10 @@
                         @guest
                             <a href="{{ route('login') }}" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-100">Iniciar sesión</a>
                         @endguest
-                        @foreach ($items as $item)
-                            <a href="{{ $item->url }}" class="block rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-amber-50">{{ $item->label }}</a>
-                            @foreach ($item->children as $child)
-                                <a href="{{ $child->url }}" class="block rounded-lg px-4 py-2 text-sm text-zinc-500 hover:bg-amber-50">{{ $child->label }}</a>
-                            @endforeach
-                        @endforeach
+                        @include('partials.navigation.mobile-branch', [
+                            'items' => $items,
+                            'level' => 0,
+                        ])
                         <a href="{{ route('contact') }}" class="inline-flex items-center gap-2 rounded-full bg-amber-500 text-white px-4 py-2 text-sm font-semibold shadow-md">Agenda una visita</a>
                         <div class="flex items-center gap-4 pt-2 text-zinc-500">
                             <a href="https://investsma.com/" class="hover:text-amber-700 transition" target="_blank" rel="noopener noreferrer" aria-label="Sitio web" title="Sitio web">
