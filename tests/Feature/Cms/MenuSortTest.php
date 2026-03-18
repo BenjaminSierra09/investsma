@@ -33,3 +33,54 @@ it('reorders menu items using the sort handler and persists order', function () 
     expect(MenuItem::forMenu('main')->pluck('label')->all())
         ->toBe(['Segundo', 'Primero']);
 });
+
+it('keeps child parent relationship when sorting siblings', function () {
+    $parent = MenuItem::query()->create([
+        'menu' => 'main',
+        'label' => 'Padre',
+        'type' => 'url',
+        'url' => 'https://example.com/padre',
+        'order' => 0,
+    ]);
+
+    MenuItem::query()->create([
+        'menu' => 'main',
+        'label' => 'Hijo',
+        'type' => 'url',
+        'url' => 'https://example.com/hijo',
+        'parent_id' => $parent->id,
+        'order' => 1,
+    ]);
+
+    MenuItem::query()->create([
+        'menu' => 'main',
+        'label' => 'Otro',
+        'type' => 'url',
+        'url' => 'https://example.com/otro',
+        'order' => 2,
+    ]);
+
+    $component = Livewire::test('pages::cms.menus.form');
+    $items = collect($component->get('items'));
+
+    $parentTempId = (string) $items->firstWhere('label', 'Padre')['temp_id'];
+    $childTempId = (string) $items->firstWhere('label', 'Hijo')['temp_id'];
+    $otherTempId = (string) $items->firstWhere('label', 'Otro')['temp_id'];
+
+    expect((string) $items->firstWhere('label', 'Hijo')['parent_temp_id'])
+        ->toBe($parentTempId);
+
+    $component->call('sortItem', $otherTempId, 0);
+
+    $itemsAfterSort = collect($component->get('items'));
+
+    expect((string) $itemsAfterSort->firstWhere('temp_id', $childTempId)['parent_temp_id'])
+        ->toBe($parentTempId);
+
+    $component->call('save');
+
+    $savedParent = MenuItem::query()->where('label', 'Padre')->firstOrFail();
+    $savedChild = MenuItem::query()->where('label', 'Hijo')->firstOrFail();
+
+    expect($savedChild->parent_id)->toBe($savedParent->id);
+});

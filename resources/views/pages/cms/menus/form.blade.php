@@ -46,27 +46,35 @@ new class extends Component {
 
     public function sortItem(string $tempId, int $position): void
     {
-        $currentIndex = collect($this->items)->search(
-            fn (array $item): bool => $item['temp_id'] === $tempId
-        );
+        $tempIds = collect($this->items)->pluck('temp_id')->values()->all();
+        $currentIndex = array_search($tempId, $tempIds, true);
 
         if ($currentIndex === false) {
             return;
         }
 
-        $items = $this->items;
-        $targetPosition = max(0, min($position, count($items) - 1));
+        $targetPosition = max(0, min($position, count($tempIds) - 1));
 
-        $movedItem = $items[$currentIndex];
-        array_splice($items, $currentIndex, 1);
-        array_splice($items, $targetPosition, 0, [$movedItem]);
+        array_splice($tempIds, $currentIndex, 1);
+        array_splice($tempIds, $targetPosition, 0, [$tempId]);
 
-        foreach ($items as $index => &$item) {
-            $item['order'] = $index;
-        }
-        unset($item);
+        $itemsByTempId = collect($this->items)->keyBy('temp_id');
 
-        $this->items = $items;
+        $this->items = collect($tempIds)
+            ->map(function (string $orderedTempId, int $index) use ($itemsByTempId) {
+                $item = $itemsByTempId->get($orderedTempId);
+
+                if (! is_array($item)) {
+                    return null;
+                }
+
+                $item['order'] = $index;
+
+                return $item;
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function loadItems(): void
@@ -192,7 +200,12 @@ new class extends Component {
                 @forelse ($items as $index => $item)
                     <tr class="align-top" wire:key="menu-item-{{ $item['temp_id'] }}" wire:sort:item="{{ $item['temp_id'] }}">
                         <td class="px-3 py-3">
-                            <flux:input wire:model.live="items.{{ $index }}.label" size="sm" />
+                            <div class="flex items-center gap-2">
+                                @if ($item['parent_temp_id'])
+                                    <span class="text-xs text-zinc-400">↳</span>
+                                @endif
+                                <flux:input wire:model.live="items.{{ $index }}.label" size="sm" />
+                            </div>
                         </td>
                         <td class="px-3 py-3">
                             <flux:select wire:model.live="items.{{ $index }}.type" size="sm">
