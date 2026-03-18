@@ -25,6 +25,28 @@ it('shows only published listings on the public index', function () {
     expect($publishedListing->slug)->not->toBeEmpty();
 });
 
+it('filters listings by sale and rent routes', function () {
+    Listing::factory()->forSale()->create([
+        'title' => 'Casa en venta',
+    ]);
+
+    Listing::factory()->forRent()->create([
+        'title' => 'Casa en renta',
+    ]);
+
+    $this->get(route('listings.sales'))
+        ->assertOk()
+        ->assertSee('Casa en venta')
+        ->assertDontSee('Casa en renta')
+        ->assertSee('Propiedades en venta');
+
+    $this->get(route('listings.rentals'))
+        ->assertOk()
+        ->assertSee('Casa en renta')
+        ->assertDontSee('Casa en venta')
+        ->assertSee('Propiedades en renta');
+});
+
 it('shows a published listing and sends inquiry emails', function () {
     Mail::fake();
 

@@ -31,6 +31,8 @@ window.startRegistration = startRegistration;
 
 let pageEditor;
 let editorPasteCleanup;
+const editorUploadEndpoint = "/editorjs/upload";
+const editorFetchEndpoint = "/editorjs/fetch";
 
 const editorMessages = {
     ui: {
@@ -269,7 +271,9 @@ const setupEditor = async () => {
                             const formData = new FormData();
                             formData.append("image", file);
 
-                            const response = await fetch("/upload/image", {
+                            const response = await fetch(
+                                editorUploadEndpoint,
+                                {
                                 method: "POST",
                                 headers: csrfToken
                                     ? {
@@ -277,7 +281,8 @@ const setupEditor = async () => {
                                       }
                                     : undefined,
                                 body: formData,
-                            });
+                                },
+                            );
 
                             if (!response.ok) {
                                 throw new Error("Error al subir la imagen");
@@ -305,7 +310,7 @@ const setupEditor = async () => {
                                 .querySelector('meta[name="csrf-token"]')
                                 ?.getAttribute("content");
 
-                            const response = await fetch("/upload/image-url", {
+                            const response = await fetch(editorFetchEndpoint, {
                                 method: "POST",
                                 headers: {
                                     ...(csrfToken
@@ -458,7 +463,9 @@ const setupEditor = async () => {
                                 const formData = new FormData();
                                 formData.append("image", file);
 
-                                const response = await fetch("/upload/image", {
+                                const response = await fetch(
+                                    editorUploadEndpoint,
+                                    {
                                     method: "POST",
                                     headers: csrfToken
                                         ? {
@@ -466,7 +473,8 @@ const setupEditor = async () => {
                                           }
                                         : undefined,
                                     body: formData,
-                                });
+                                    },
+                                );
 
                                 if (!response.ok) {
                                     throw new Error("Error al subir la imagen");
@@ -495,7 +503,7 @@ const setupEditor = async () => {
                                     ?.getAttribute("content");
 
                                 const response = await fetch(
-                                    "/upload/image-url",
+                                    editorFetchEndpoint,
                                     {
                                         method: "POST",
                                         headers: {

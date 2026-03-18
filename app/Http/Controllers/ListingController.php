@@ -13,14 +13,17 @@ class ListingController extends Controller
 {
     public function index(): View
     {
-        return view('public.listings-index', [
-            'listings' => Listing::query()
-                ->published()
-                ->latest('featured')
-                ->latest('published_at')
-                ->latest('id')
-                ->get(),
-        ]);
+        return $this->renderIndex();
+    }
+
+    public function sales(): View
+    {
+        return $this->renderIndex('sale');
+    }
+
+    public function rentals(): View
+    {
+        return $this->renderIndex('rent');
     }
 
     public function show(Listing $listing): View
@@ -48,5 +51,23 @@ class ListingController extends Controller
             ->send(new ListingInquiryMail($listing, $data));
 
         return back()->with('listing_inquiry_status', 'Gracias, recibimos tu mensaje. Te contactamos en breve.');
+    }
+
+    private function renderIndex(?string $listingType = null): View
+    {
+        $query = Listing::query()
+            ->published()
+            ->latest('featured')
+            ->latest('published_at')
+            ->latest('id');
+
+        if ($listingType) {
+            $query->where('listing_type', $listingType);
+        }
+
+        return view('public.listings-index', [
+            'listings' => $query->get(),
+            'listingType' => $listingType,
+        ]);
     }
 }

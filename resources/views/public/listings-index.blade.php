@@ -1,14 +1,34 @@
 @php use Illuminate\Support\Str; @endphp
 
 <x-layouts.public title="{{ __('Listados | investsma') }}">
+    @php
+        $heading = match ($listingType ?? null) {
+            'sale' => 'Propiedades en venta',
+            'rent' => 'Propiedades en renta',
+            default => 'Propiedades exclusivas de investsma',
+        };
+
+        $description = match ($listingType ?? null) {
+            'sale' => 'Explora casas, terrenos y oportunidades de inversión disponibles para compra directa.',
+            'rent' => 'Descubre propiedades disponibles para renta con atención directa de nuestro equipo.',
+            default => 'Explora propiedades publicadas directamente por nuestro equipo, con su propia página, galería y contacto inmediato.',
+        };
+    @endphp
+
     <section class="mx-auto max-w-6xl px-6 pb-16 pt-16 lg:pt-20">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div class="max-w-2xl">
                 <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">Listados</p>
-                <h1 class="mt-3 text-4xl font-semibold text-zinc-900">Propiedades exclusivas de investsma</h1>
-                <p class="mt-3 text-base leading-relaxed text-zinc-700">Explora propiedades publicadas directamente por nuestro equipo, con su propia página, galería y contacto inmediato.</p>
+                <h1 class="mt-3 text-4xl font-semibold text-zinc-900">{{ $heading }}</h1>
+                <p class="mt-3 text-base leading-relaxed text-zinc-700">{{ $description }}</p>
             </div>
             <a href="{{ route('contact') }}" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 transition hover:-translate-y-0.5">Publicar o pedir más opciones</a>
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+            <a href="{{ route('listings.index') }}" class="rounded-full px-4 py-2 text-sm font-semibold {{ empty($listingType) ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700 ring-1 ring-amber-100' }}">Todos</a>
+            <a href="{{ route('listings.sales') }}" class="rounded-full px-4 py-2 text-sm font-semibold {{ ($listingType ?? null) === 'sale' ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700 ring-1 ring-amber-100' }}">Venta</a>
+            <a href="{{ route('listings.rentals') }}" class="rounded-full px-4 py-2 text-sm font-semibold {{ ($listingType ?? null) === 'rent' ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700 ring-1 ring-amber-100' }}">Renta</a>
         </div>
 
         <div class="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">

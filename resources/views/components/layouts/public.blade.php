@@ -30,15 +30,37 @@
                     'children' => collect(),
                 ]);
 
-            $hasListings = $items->contains(
+            $listingChildren = collect([
+                (object) [
+                    'label' => 'Venta',
+                    'url' => route('listings.sales'),
+                    'children' => collect(),
+                ],
+                (object) [
+                    'label' => 'Renta',
+                    'url' => route('listings.rentals'),
+                    'children' => collect(),
+                ],
+            ]);
+
+            $listingIndex = $items->search(
                 fn ($item) => rtrim($item->url, '/') === rtrim(route('listings.index'), '/')
             );
 
-            if (! $hasListings) {
+            if ($listingIndex !== false) {
+                $existingListingItem = $items[$listingIndex];
+                $existingChildren = collect($existingListingItem->children ?? []);
+
+                $items[$listingIndex] = (object) [
+                    'label' => $existingListingItem->label,
+                    'url' => $existingListingItem->url,
+                    'children' => $existingChildren->isNotEmpty() ? $existingChildren : $listingChildren,
+                ];
+            } else {
                 $items = $items->push((object) [
                     'label' => 'Listados',
                     'url' => route('listings.index'),
-                    'children' => collect(),
+                    'children' => $listingChildren,
                 ]);
             }
         @endphp
@@ -211,7 +233,8 @@
                         <div class="text-sm font-semibold text-zinc-800">Explora</div>
                         <ul class="mt-3 space-y-2 text-sm text-zinc-600">
                             <li><a href="{{ route('home') }}" class="hover:text-amber-700">Inicio</a></li>
-                            <li><a href="{{ route('listings.index') }}" class="hover:text-amber-700">Listados</a></li>
+                            <li><a href="{{ route('listings.sales') }}" class="hover:text-amber-700">Venta</a></li>
+                            <li><a href="{{ route('listings.rentals') }}" class="hover:text-amber-700">Renta</a></li>
                             <li><a href="{{ route('about') }}" class="hover:text-amber-700">Nosotros</a></li>
                             <li><a href="{{ route('contact') }}" class="hover:text-amber-700">Contacto</a></li>
                         </ul>

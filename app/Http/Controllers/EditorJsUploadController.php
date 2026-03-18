@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -10,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EditorJsUploadController extends Controller
 {
-    public function upload(Request $request)
+    public function upload(Request $request): JsonResponse
     {
         // EditorJS image tool envía el campo como "image"; aceptamos ambos nombres.
         $request->merge(['file' => $request->file('file') ?? $request->file('image')]);
@@ -28,7 +29,7 @@ class EditorJsUploadController extends Controller
         ]);
     }
 
-    public function fetch(Request $request)
+    public function fetch(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'url' => ['required', 'url'],
