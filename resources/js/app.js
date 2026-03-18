@@ -34,6 +34,24 @@ let editorPasteCleanup;
 const editorUploadEndpoint = "/editorjs/upload";
 const editorFetchEndpoint = "/editorjs/fetch";
 
+const getCsrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+
+const editorRequestOptions = (options = {}) => {
+    const csrfToken = getCsrfToken();
+
+    return {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            ...(csrfToken ? { "X-CSRF-TOKEN": csrfToken } : {}),
+            ...(options.headers ?? {}),
+        },
+    };
+};
+
 const editorMessages = {
     ui: {
         blockTunes: {
@@ -262,27 +280,18 @@ const setupEditor = async () => {
             buttonContent: "Imagen",
             config: {
                 uploader: {
-                    async uploadByFile(file) {
-                        try {
-                            const csrfToken = document
-                                .querySelector('meta[name="csrf-token"]')
-                                ?.getAttribute("content");
+                        async uploadByFile(file) {
+                            try {
+                                const formData = new FormData();
+                                formData.append("image", file);
 
-                            const formData = new FormData();
-                            formData.append("image", file);
-
-                            const response = await fetch(
-                                editorUploadEndpoint,
-                                {
-                                method: "POST",
-                                headers: csrfToken
-                                    ? {
-                                          "X-CSRF-TOKEN": csrfToken,
-                                      }
-                                    : undefined,
-                                body: formData,
-                                },
-                            );
+                                const response = await fetch(
+                                    editorUploadEndpoint,
+                                    editorRequestOptions({
+                                        method: "POST",
+                                        body: formData,
+                                    }),
+                                );
 
                             if (!response.ok) {
                                 throw new Error("Error al subir la imagen");
@@ -306,19 +315,14 @@ const setupEditor = async () => {
                     },
                     async uploadByUrl(url) {
                         try {
-                            const csrfToken = document
-                                .querySelector('meta[name="csrf-token"]')
-                                ?.getAttribute("content");
-
                             const response = await fetch(editorFetchEndpoint, {
-                                method: "POST",
-                                headers: {
-                                    ...(csrfToken
-                                        ? { "X-CSRF-TOKEN": csrfToken }
-                                        : {}),
-                                    "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({ url }),
+                                ...editorRequestOptions({
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ url }),
+                                }),
                             });
 
                             if (!response.ok) {
@@ -456,24 +460,15 @@ const setupEditor = async () => {
                     uploader: {
                         async uploadByFile(file) {
                             try {
-                                const csrfToken = document
-                                    .querySelector('meta[name="csrf-token"]')
-                                    ?.getAttribute("content");
-
                                 const formData = new FormData();
                                 formData.append("image", file);
 
                                 const response = await fetch(
                                     editorUploadEndpoint,
-                                    {
-                                    method: "POST",
-                                    headers: csrfToken
-                                        ? {
-                                              "X-CSRF-TOKEN": csrfToken,
-                                          }
-                                        : undefined,
-                                    body: formData,
-                                    },
+                                    editorRequestOptions({
+                                        method: "POST",
+                                        body: formData,
+                                    }),
                                 );
 
                                 if (!response.ok) {
@@ -498,22 +493,15 @@ const setupEditor = async () => {
                         },
                         async uploadByUrl(url) {
                             try {
-                                const csrfToken = document
-                                    .querySelector('meta[name="csrf-token"]')
-                                    ?.getAttribute("content");
-
                                 const response = await fetch(
                                     editorFetchEndpoint,
-                                    {
+                                    editorRequestOptions({
                                         method: "POST",
                                         headers: {
-                                            ...(csrfToken
-                                                ? { "X-CSRF-TOKEN": csrfToken }
-                                                : {}),
                                             "Content-Type": "application/json",
                                         },
                                         body: JSON.stringify({ url }),
-                                    },
+                                    }),
                                 );
 
                                 if (!response.ok) {

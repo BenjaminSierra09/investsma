@@ -4,6 +4,15 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+it('renders a csrf meta tag on the cms page form', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('cms.pages.form'))
+        ->assertOk()
+        ->assertSee('meta name="csrf-token"', false);
+});
+
 it('stores uploaded editor images for authenticated cms users', function () {
     Storage::fake('public');
 
