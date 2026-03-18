@@ -6,7 +6,7 @@
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
-                <a href="{{ route('dashboard') }}" class="flex items-center" wire:navigate>
+                <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
                     <img src="{{ asset('logotipo.png') }}" alt="investsma" class="h-10 w-auto" />
                 </a>
                 <flux:sidebar.collapse class="lg:hidden" />
@@ -19,6 +19,12 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="document-text" :href="route('cms.pages')" :current="request()->routeIs('cms.pages')" wire:navigate>
                         {{ __('Páginas') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="building-office-2" :href="route('cms.listings')" :current="request()->routeIs('cms.listings*')" wire:navigate>
+                        {{ __('Listados') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="users" :href="route('cms.users')" :current="request()->routeIs('cms.users')" wire:navigate>
+                        {{ __('Usuarios') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="list-bullet" :href="route('cms.menus')" :current="request()->routeIs('cms.menus')" wire:navigate>
                         {{ __('Menú principal') }}

@@ -8,6 +8,37 @@
                     <h1 class="text-3xl font-bold text-zinc-900">Busca propiedades MLS</h1>
                     <p class="text-sm text-zinc-600">Filtra por colonia, precio y características. Consultamos la API de AMPI en tiempo real.</p>
                 </div>
+                <a
+                    href="{{ route('properties.map', array_filter([
+                        'office_id' => $office_id,
+                        'neighborhood' => $neighborhood,
+                        'category' => $category,
+                        'status' => $status,
+                        'currency' => $currency,
+                        'price_min' => $price_min,
+                        'price_max' => $price_max,
+                        'floors' => $floors,
+                        'construction_meters_min' => $construction_meters_min,
+                        'construction_meters_max' => $construction_meters_max,
+                        'lot_meters_min' => $lot_meters_min,
+                        'lot_meters_max' => $lot_meters_max,
+                        'bathrooms' => $bathrooms,
+                        'bedrooms' => $bedrooms,
+                        'furnished' => $furnished,
+                        'parking_type' => $parking_type,
+                        'with_yard' => $with_yard,
+                        'pool' => $pool,
+                        'casita' => $casita,
+                        'gated_comm' => $gated_comm,
+                        'per_page' => $perPage,
+                    ], fn ($value) => filled($value))) }}"
+                    class="inline-flex items-center gap-2 self-start rounded-xl border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50"
+                >
+                    Ver mapa
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </a>
             </div>
 
             <form wire:submit.prevent="search" class="rounded-2xl border border-amber-100 bg-white/80 p-6 shadow-sm backdrop-blur">

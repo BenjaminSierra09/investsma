@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use App\Mail\ContactMessage;
 use App\Models\Page;
 use App\Support\EditorJsRenderer;
+use App\Support\SeoData;
 use App\Support\StaticPageRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PageController extends Controller
@@ -32,6 +34,13 @@ class PageController extends Controller
             'per_page',
         ]);
 
+        SeoData::apply(
+            title: 'Bienes raíces en San Miguel de Allende | investsma',
+            description: 'Invierte en San Miguel de Allende con propiedades seleccionadas, análisis local y acompañamiento inmobiliario para compra, renta o plusvalía.',
+            keywords: ['investsma', 'bienes raíces', 'San Miguel de Allende', 'propiedades', 'inversión inmobiliaria'],
+            image: asset('logotipo.png'),
+        );
+
         return view('public.home', [
             'properties' => $this->fetchOfficeProperties($filters),
             'neighborhoods' => $this->fetchNeighborhoods(),
@@ -40,16 +49,37 @@ class PageController extends Controller
 
     public function about(): View
     {
+        SeoData::apply(
+            title: 'Nosotros | investsma',
+            description: 'Conoce al equipo de investsma y nuestra metodología para evaluar propiedades, plusvalía y riesgos en San Miguel de Allende.',
+            keywords: ['investsma', 'nosotros', 'San Miguel de Allende', 'asesoría inmobiliaria'],
+            image: asset('logotipo.png'),
+        );
+
         return view('public.about');
     }
 
     public function contact(): View
     {
+        SeoData::apply(
+            title: 'Contacto | investsma',
+            description: 'Habla con investsma para encontrar casas, lotes y oportunidades de inversión inmobiliaria en San Miguel de Allende.',
+            keywords: ['contacto', 'investsma', 'San Miguel de Allende', 'bienes raíces'],
+            image: asset('logotipo.png'),
+        );
+
         return view('public.contact');
     }
 
     public function properties(): View
     {
+        SeoData::apply(
+            title: 'Propiedades | investsma',
+            description: 'Explora propiedades en San Miguel de Allende con filtros por zona, precio, tipo y características para identificar mejores oportunidades.',
+            keywords: ['propiedades', 'San Miguel de Allende', 'casas', 'lotes', 'investsma'],
+            image: asset('logotipo.png'),
+        );
+
         return view('public.properties-index');
     }
 
@@ -73,11 +103,27 @@ class PageController extends Controller
         abort_unless($page->status === 'published', 404);
 
         if ($page->isStatic() && filled($page->static_view)) {
+            SeoData::apply(
+                title: ($page->meta_title ?: $page->title).' | investsma',
+                description: $page->meta_description,
+                keywords: [$page->title, 'investsma', 'San Miguel de Allende'],
+                image: asset('logotipo.png'),
+            );
+
             return view($page->static_view, ['page' => $page]);
         }
 
         $html = data_get($page->content, 'html')
             ?? EditorJsRenderer::render($page->content ?? []);
+
+        SeoData::apply(
+            title: ($page->meta_title ?: $page->title).' | investsma',
+            description: $page->meta_description ?: Str::limit(strip_tags($html), 160, '...'),
+            keywords: [$page->title, 'investsma', 'San Miguel de Allende'],
+            image: asset('logotipo.png'),
+            type: 'article',
+            schemaType: 'Article',
+        );
 
         return view('public.page', [
             'page' => $page,
@@ -88,8 +134,16 @@ class PageController extends Controller
     public function static(string $key): View
     {
         $view = StaticPageRegistry::viewForKey($key);
+        $page = StaticPageRegistry::find($key);
 
         abort_if(! $view, 404);
+
+        SeoData::apply(
+            title: ($page['title'] ?? 'investsma').' | investsma',
+            description: $page['description'] ?? null,
+            keywords: [$page['title'] ?? null, 'investsma', 'San Miguel de Allende'],
+            image: asset('logotipo.png'),
+        );
 
         return view($view);
     }

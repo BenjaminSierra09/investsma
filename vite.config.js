@@ -9,6 +9,8 @@ export default defineConfig({
                 "resources/css/app.css",
                 "resources/css/property-gallery.css",
                 "resources/js/app.js",
+                "resources/js/listing-detail.js",
+                "resources/js/properties-map.js",
                 "resources/js/single-property.js",
                 "resources/css/editorjs.css",
             ],

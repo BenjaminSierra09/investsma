@@ -200,9 +200,9 @@
                         @php
                             $locale = app()->getLocale();
                             $description =
-                                $locale === 'es' && !empty($property['description_full_es'])
+                                $locale === 'es' && ! empty($property['description_full_es'])
                                     ? $property['description_full_es']
-                                    : $property['description_full_en'];
+                                    : ($property['description_full_en'] ?? $property['description_short_en'] ?? $property['description_short_es'] ?? null);
                             $cleanDescription = $description ? strip_tags($description, '<br><br/>') : null;
                         @endphp
                         @if (! empty($cleanDescription))
@@ -310,7 +310,7 @@
                     <!-- Property ID -->
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <div class="text-sm text-gray-500 mb-1">{{ __('AMPI MLS ID') }}</div>
-                        <div class="font-semibold text-gray-900">#{{ $property['mls_id'] }}</div>
+                        <div class="font-semibold text-gray-900">#{{ $property['mls_id'] ?? $property['id'] ?? __('N/A') }}</div>
                     </div>
                 </div>
             </div>

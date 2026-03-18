@@ -30,5 +30,13 @@ return [
             'view' => 'public.contact',
             'description' => 'Formulario de contacto y datos de la oficina.',
         ],
+        [
+            'key' => 'listings',
+            'title' => 'Listados',
+            'route' => 'listings.index',
+            'url' => '/listados',
+            'view' => 'public.listings-index',
+            'description' => 'Propiedades propias publicadas directamente por investsma.',
+        ],
     ],
 ];

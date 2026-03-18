@@ -1,3 +1,11 @@
+@php
+    \App\Support\SeoData::applyIfMissing(
+        title: $title ?? 'investsma | Bienes raíces en San Miguel de Allende',
+        description: $description ?? null,
+        image: $image ?? asset('logotipo.png'),
+    );
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -21,6 +29,18 @@
                     'url' => url($page['url']),
                     'children' => collect(),
                 ]);
+
+            $hasListings = $items->contains(
+                fn ($item) => rtrim($item->url, '/') === rtrim(route('listings.index'), '/')
+            );
+
+            if (! $hasListings) {
+                $items = $items->push((object) [
+                    'label' => 'Listados',
+                    'url' => route('listings.index'),
+                    'children' => collect(),
+                ]);
+            }
         @endphp
 
         <div class="relative overflow-hidden">
@@ -191,6 +211,7 @@
                         <div class="text-sm font-semibold text-zinc-800">Explora</div>
                         <ul class="mt-3 space-y-2 text-sm text-zinc-600">
                             <li><a href="{{ route('home') }}" class="hover:text-amber-700">Inicio</a></li>
+                            <li><a href="{{ route('listings.index') }}" class="hover:text-amber-700">Listados</a></li>
                             <li><a href="{{ route('about') }}" class="hover:text-amber-700">Nosotros</a></li>
                             <li><a href="{{ route('contact') }}" class="hover:text-amber-700">Contacto</a></li>
                         </ul>

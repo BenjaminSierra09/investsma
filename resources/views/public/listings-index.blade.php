@@ -1,0 +1,78 @@
+@php use Illuminate\Support\Str; @endphp
+
+<x-layouts.public title="{{ __('Listados | investsma') }}">
+    <section class="mx-auto max-w-6xl px-6 pb-16 pt-16 lg:pt-20">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div class="max-w-2xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">Listados</p>
+                <h1 class="mt-3 text-4xl font-semibold text-zinc-900">Propiedades exclusivas de investsma</h1>
+                <p class="mt-3 text-base leading-relaxed text-zinc-700">Explora propiedades publicadas directamente por nuestro equipo, con su propia página, galería y contacto inmediato.</p>
+            </div>
+            <a href="{{ route('contact') }}" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 transition hover:-translate-y-0.5">Publicar o pedir más opciones</a>
+        </div>
+
+        <div class="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            @forelse ($listings as $listing)
+                <article class="overflow-hidden rounded-[28px] border border-amber-100/70 bg-white/90 shadow-sm ring-1 ring-white/60">
+                    <a href="{{ route('listings.show', $listing) }}" class="block aspect-[4/3] overflow-hidden bg-zinc-100">
+                        @if ($listing->primaryImage())
+                            <img
+                                src="{{ $listing->primaryImage() }}"
+                                alt="{{ $listing->title }}"
+                                class="h-full w-full object-cover transition duration-700 hover:scale-105"
+                                loading="lazy"
+                            >
+                        @else
+                            <div class="flex h-full items-center justify-center text-zinc-400">Sin imagen</div>
+                        @endif
+                    </a>
+                    <div class="space-y-4 px-5 py-5">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h2 class="text-xl font-semibold text-zinc-900">{{ $listing->title }}</h2>
+                                @if ($listing->location)
+                                    <p class="mt-1 text-sm text-zinc-600">{{ $listing->location }}</p>
+                                @endif
+                            </div>
+                            @if ($listing->featured)
+                                <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">Destacado</span>
+                            @endif
+                        </div>
+
+                        @if ($listing->price)
+                            <div class="text-lg font-semibold text-amber-700">{{ $listing->currency }} ${{ number_format((float) $listing->price, 0) }}</div>
+                        @endif
+
+                        <div class="flex flex-wrap gap-2 text-xs text-zinc-700">
+                            @if ($listing->bedrooms)
+                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->bedrooms }} rec</span>
+                            @endif
+                            @if ($listing->bathrooms)
+                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->bathrooms }} baños</span>
+                            @endif
+                            @if ($listing->construction_m2)
+                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->construction_m2 }} m2 const.</span>
+                            @endif
+                            @if ($listing->lot_m2)
+                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->lot_m2 }} m2 terreno</span>
+                            @endif
+                        </div>
+
+                        <p class="text-sm leading-relaxed text-zinc-600">{{ Str::limit($listing->summary ?: strip_tags($listing->description ?? ''), 140) }}</p>
+
+                        <a href="{{ route('listings.show', $listing) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 hover:text-amber-800">
+                            Ver propiedad
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+            @empty
+                <div class="rounded-[28px] border border-dashed border-amber-200 bg-white/70 px-6 py-12 text-center text-zinc-600 md:col-span-2 xl:col-span-3">
+                    Aún no hay listados publicados.
+                </div>
+            @endforelse
+        </div>
+    </section>
+</x-layouts.public>

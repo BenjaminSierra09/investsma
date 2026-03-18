@@ -66,6 +66,31 @@ new class extends Component {
             ->all();
     }
 
+    public function sortItem(string $tempId, int $position): void
+    {
+        $currentIndex = collect($this->items)->search(
+            fn (array $item): bool => $item['temp_id'] === $tempId
+        );
+
+        if ($currentIndex === false) {
+            return;
+        }
+
+        $items = $this->items;
+        $targetPosition = max(0, min($position, count($items) - 1));
+
+        $movedItem = $items[$currentIndex];
+        array_splice($items, $currentIndex, 1);
+        array_splice($items, $targetPosition, 0, [$movedItem]);
+
+        foreach ($items as $index => &$item) {
+            $item['order'] = $index;
+        }
+        unset($item);
+
+        $this->items = $items;
+    }
+
     public function save(): void
     {
         $this->validate([
@@ -152,9 +177,9 @@ new class extends Component {
                         <th class="px-3 py-2"></th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-100">
+                <tbody class="divide-y divide-zinc-100" wire:sort="sortItem">
                     @forelse ($items as $index => $item)
-                        <tr class="align-top">
+                        <tr class="align-top" wire:key="menu-item-{{ $item['temp_id'] }}" wire:sort:item="{{ $item['temp_id'] }}">
                             <td class="px-3 py-3">
                                 <flux:input wire:model.live="items.{{ $index }}.label" size="sm" />
                             </td>
@@ -195,7 +220,10 @@ new class extends Component {
                                 </flux:select>
                             </td>
                             <td class="px-3 py-3">
-                                <flux:input wire:model.live="items.{{ $index }}.order" type="number" size="sm" />
+                                <div class="flex items-center gap-2">
+                                    <flux:button type="button" size="xs" variant="ghost" wire:sort:handle>Arrastrar</flux:button>
+                                    <span class="text-xs text-zinc-500">{{ $index + 1 }}</span>
+                                </div>
                             </td>
                             <td class="px-3 py-3 text-right">
                                 <flux:button icon="trash" size="xs" variant="ghost" wire:click="removeItem('{{ $item['temp_id'] }}')" />
