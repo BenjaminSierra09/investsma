@@ -17,6 +17,7 @@ it('creates a listing from the cms form', function () {
         ->set('title', 'Casa Magnolia')
         ->set('slug', 'casa-magnolia')
         ->set('status', 'published')
+        ->set('listing_type', 'rent')
         ->set('currency', 'USD')
         ->set('price', '450000')
         ->set('location', 'Guadiana, San Miguel de Allende')
@@ -40,7 +41,8 @@ it('creates a listing from the cms form', function () {
         ->not->toBeNull()
         ->title->toBe('Casa Magnolia')
         ->slug->toBe('casa-magnolia')
-        ->status->toBe('published');
+        ->status->toBe('published')
+        ->listing_type->toBe('rent');
 
     expect($listing->gallery)->toHaveCount(2);
     expect($listing->cover_image)->toBe($listing->gallery[0]);

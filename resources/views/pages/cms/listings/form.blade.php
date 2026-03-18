@@ -20,6 +20,8 @@ new class extends Component
 
     public string $status = 'draft';
 
+    public string $listing_type = 'sale';
+
     public bool $featured = false;
 
     public string $currency = 'USD';
@@ -74,6 +76,7 @@ new class extends Component
             $this->title = $listing->title;
             $this->slug = $listing->slug;
             $this->status = $listing->status;
+            $this->listing_type = $listing->listing_type ?? 'sale';
             $this->featured = $listing->featured;
             $this->currency = $listing->currency;
             $this->price = $listing->price ? (string) $listing->price : null;
@@ -97,6 +100,7 @@ new class extends Component
                 'title',
                 'slug',
                 'status',
+                'listing_type',
                 'featured',
                 'currency',
                 'price',
@@ -118,6 +122,7 @@ new class extends Component
             ]);
 
             $this->status = 'draft';
+            $this->listing_type = 'sale';
             $this->currency = 'USD';
             $this->contact_email = 'info@investsma.com';
             $this->contact_phone = '+52 415 125 5042';
@@ -167,6 +172,7 @@ new class extends Component
             'title' => ['required', 'string', 'min:3', 'max:255'],
             'slug' => ['required', 'string', 'min:3', 'max:255', Rule::unique('listings', 'slug')->ignore($this->editing?->id)],
             'status' => ['required', 'in:draft,published'],
+            'listing_type' => ['required', 'in:sale,rent'],
             'featured' => ['required', 'boolean'],
             'currency' => ['required', 'string', 'max:10'],
             'price' => ['nullable', 'numeric', 'min:0'],
@@ -250,6 +256,10 @@ new class extends Component
                     <flux:select wire:model.live="status" label="Estado">
                         <option value="draft">Borrador</option>
                         <option value="published">Publicado</option>
+                    </flux:select>
+                    <flux:select wire:model.live="listing_type" label="Operación">
+                        <option value="sale">Venta</option>
+                        <option value="rent">Renta</option>
                     </flux:select>
                     <flux:select wire:model.live="currency" label="Moneda">
                         <option value="USD">USD</option>

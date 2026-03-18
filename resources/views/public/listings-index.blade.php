@@ -34,9 +34,12 @@
                                     <p class="mt-1 text-sm text-zinc-600">{{ $listing->location }}</p>
                                 @endif
                             </div>
-                            @if ($listing->featured)
-                                <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">Destacado</span>
-                            @endif
+                            <div class="flex flex-wrap justify-end gap-2">
+                                <span class="rounded-full bg-zinc-900 px-3 py-1 text-[11px] font-semibold text-white">{{ $listing->listingTypeLabel() }}</span>
+                                @if ($listing->featured)
+                                    <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">Destacado</span>
+                                @endif
+                            </div>
                         </div>
 
                         @if ($listing->price)

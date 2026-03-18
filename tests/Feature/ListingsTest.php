@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Mail;
 it('shows only published listings on the public index', function () {
     $publishedListing = Listing::factory()->create([
         'title' => 'Casa publicada',
+        'listing_type' => 'sale',
     ]);
 
     Listing::factory()->draft()->create([
@@ -18,6 +19,7 @@ it('shows only published listings on the public index', function () {
     $response
         ->assertOk()
         ->assertSee('Casa publicada')
+        ->assertSee('Venta')
         ->assertDontSee('Casa borrador');
 
     expect($publishedListing->slug)->not->toBeEmpty();
@@ -28,12 +30,14 @@ it('shows a published listing and sends inquiry emails', function () {
 
     $listing = Listing::factory()->create([
         'title' => 'Casa del Centro',
+        'listing_type' => 'rent',
         'contact_email' => 'ventas@example.com',
     ]);
 
     $this->get(route('listings.show', $listing))
         ->assertOk()
         ->assertSee('Casa del Centro')
+        ->assertSee('Renta')
         ->assertSee('Solicita más información');
 
     $response = $this->post(route('listings.inquire', $listing), [

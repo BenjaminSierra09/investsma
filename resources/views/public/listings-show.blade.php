@@ -8,6 +8,7 @@
                     <a href="{{ route('listings.index') }}" class="text-sm font-semibold text-amber-700 hover:text-amber-800">← Volver a listados</a>
                     <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
                         <div class="max-w-2xl">
+                            <div class="mb-3 inline-flex rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ $listing->listingTypeLabel() }}</div>
                             <h1 class="text-4xl font-semibold text-zinc-900">{{ $listing->title }}</h1>
                             @if ($listing->location)
                                 <p class="mt-2 text-base text-zinc-600">{{ $listing->location }}</p>

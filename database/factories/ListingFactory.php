@@ -23,6 +23,7 @@ class ListingFactory extends Factory
             'title' => $title,
             'slug' => Str::slug($title).'-'.fake()->unique()->numerify('##'),
             'status' => 'published',
+            'listing_type' => fake()->randomElement(['sale', 'rent']),
             'featured' => false,
             'currency' => 'USD',
             'price' => fake()->numberBetween(180000, 1200000),
@@ -56,6 +57,20 @@ class ListingFactory extends Factory
     {
         return $this->state(fn (): array => [
             'featured' => true,
+        ]);
+    }
+
+    public function forSale(): static
+    {
+        return $this->state(fn (): array => [
+            'listing_type' => 'sale',
+        ]);
+    }
+
+    public function forRent(): static
+    {
+        return $this->state(fn (): array => [
+            'listing_type' => 'rent',
         ]);
     }
 }

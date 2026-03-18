@@ -77,6 +77,19 @@ new class extends Component {
             ->all();
     }
 
+    public function updateItemLabel(string $tempId, string $label): void
+    {
+        $index = collect($this->items)->search(
+            fn (array $item): bool => $item['temp_id'] === $tempId
+        );
+
+        if ($index === false) {
+            return;
+        }
+
+        $this->items[$index]['label'] = $label;
+    }
+
     public function loadItems(): void
     {
         $rows = MenuItem::forMenu($this->menu)->get();
@@ -204,7 +217,11 @@ new class extends Component {
                                 @if ($item['parent_temp_id'])
                                     <span class="text-xs text-zinc-400">↳</span>
                                 @endif
-                                <flux:input wire:model.live="items.{{ $index }}.label" size="sm" />
+                                <flux:input
+                                    :value="$item['label']"
+                                    size="sm"
+                                    wire:input.debounce.300ms="updateItemLabel('{{ $item['temp_id'] }}', $event.target.value)"
+                                />
                             </div>
                         </td>
                         <td class="px-3 py-3">

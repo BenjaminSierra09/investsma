@@ -16,6 +16,7 @@ class Listing extends Model
         'title',
         'slug',
         'status',
+        'listing_type',
         'featured',
         'currency',
         'price',
@@ -68,5 +69,13 @@ class Listing extends Model
     public function primaryImage(): ?string
     {
         return $this->cover_image ?: collect($this->gallery)->first();
+    }
+
+    public function listingTypeLabel(): string
+    {
+        return match ($this->listing_type) {
+            'rent' => 'Renta',
+            default => 'Venta',
+        };
     }
 }

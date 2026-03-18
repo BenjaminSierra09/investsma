@@ -84,3 +84,35 @@ it('keeps child parent relationship when sorting siblings', function () {
 
     expect($savedChild->parent_id)->toBe($savedParent->id);
 });
+
+it('updates only the selected item label after sorting', function () {
+    MenuItem::query()->create([
+        'menu' => 'main',
+        'label' => 'Uno',
+        'type' => 'url',
+        'url' => 'https://example.com/uno',
+        'order' => 0,
+    ]);
+
+    MenuItem::query()->create([
+        'menu' => 'main',
+        'label' => 'Dos',
+        'type' => 'url',
+        'url' => 'https://example.com/dos',
+        'order' => 1,
+    ]);
+
+    $component = Livewire::test('pages::cms.menus.form');
+    $items = collect($component->get('items'));
+
+    $unoTempId = (string) $items->firstWhere('label', 'Uno')['temp_id'];
+    $dosTempId = (string) $items->firstWhere('label', 'Dos')['temp_id'];
+
+    $component->call('sortItem', $dosTempId, 0);
+    $component->call('updateItemLabel', $unoTempId, 'Uno editado');
+
+    $itemsAfterEdit = collect($component->get('items'))->keyBy('temp_id');
+
+    expect($itemsAfterEdit[$unoTempId]['label'])->toBe('Uno editado')
+        ->and($itemsAfterEdit[$dosTempId]['label'])->toBe('Dos');
+});
