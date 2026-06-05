@@ -107,6 +107,45 @@
             </div>
 
             <aside class="lg:sticky lg:top-28 lg:self-start">
+                @if ($listing->agent)
+                    <div class="mb-6 rounded-[30px] border border-amber-100/80 bg-white/95 p-7 shadow-sm">
+                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-600">Asesor asignado</p>
+
+                        <div class="mt-4 flex items-center gap-4">
+                            @if ($listing->agent->photo_url)
+                                <img src="{{ $listing->agent->photo_url }}" alt="{{ $listing->agent->name }}" class="h-20 w-20 rounded-full object-cover ring-2 ring-amber-100">
+                            @else
+                                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 text-xl font-semibold text-amber-700">
+                                    {{ str($listing->agent->name)->trim()->explode(' ')->filter()->take(2)->map(fn ($part) => str($part)->substr(0, 1))->join('') }}
+                                </div>
+                            @endif
+
+                            <div>
+                                <h2 class="text-2xl font-semibold text-zinc-900">{{ $listing->agent->name }}</h2>
+                                @if ($listing->agent->title)
+                                    <p class="mt-1 text-sm font-medium text-amber-700">{{ $listing->agent->title }}</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        @if ($listing->agent->bio)
+                            <p class="mt-4 text-sm leading-relaxed text-zinc-600">{{ $listing->agent->bio }}</p>
+                        @endif
+
+                        <div class="mt-4 space-y-2 text-sm text-zinc-600">
+                            @if ($listing->agent->phone)
+                                <div>Tel: <a href="tel:{{ preg_replace('/[^0-9+]/', '', $listing->agent->phone) }}" class="font-medium text-amber-700">{{ $listing->agent->phone }}</a></div>
+                            @endif
+                            @if ($listing->agent->email)
+                                <div>Email: <a href="mailto:{{ $listing->agent->email }}" class="font-medium text-amber-700">{{ $listing->agent->email }}</a></div>
+                            @endif
+                            @if ($listing->agent->whatsapp)
+                                <div>WhatsApp: <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $listing->agent->whatsapp) }}" class="font-medium text-amber-700" target="_blank" rel="noreferrer">Enviar mensaje</a></div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 <div class="rounded-[30px] bg-zinc-900 p-7 text-white shadow-xl">
                     <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-500">Contacto</p>
                     <h2 class="mt-3 text-2xl font-semibold">Solicita más información</h2>

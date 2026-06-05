@@ -33,6 +33,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('/cms/usuarios', 'pages::cms.users.index')->name('cms.users');
     Route::livewire('/cms/menu-principal', 'pages::cms.menus.index')->name('cms.menus');
     Route::livewire('/cms/menu-principal/form', 'pages::cms.menus.form')->name('cms.menus.form');
+    Route::livewire('/cms/agentes', 'pages::cms.agents.index')->name('cms.agents');
+    Route::livewire('/cms/agentes/form/{agentId?}', 'pages::cms.agents.form')->name('cms.agents.form');
     Route::livewire('/cms/listados', 'pages::cms.listings.index')->name('cms.listings');
     Route::livewire('/cms/listados/form/{listingId?}', 'pages::cms.listings.form')->name('cms.listings.form');
 

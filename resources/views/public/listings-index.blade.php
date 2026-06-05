@@ -1,63 +1,77 @@
 @php use Illuminate\Support\Str; @endphp
 
-<x-layouts.public title="{{ __('Listados | investsma') }}">
+<x-layouts.public title="Listados | investsma">
     @php
         $heading = match ($listingType ?? null) {
-            'sale' => 'Propiedades en venta',
-            'rent' => 'Propiedades en renta',
-            default => 'Propiedades exclusivas de investsma',
+            'sale' => 'Propiedades en venta seleccionadas por investsma',
+            'rent' => 'Propiedades en renta seleccionadas por investsma',
+            default => 'Listados exclusivos del equipo investsma',
         };
 
         $description = match ($listingType ?? null) {
-            'sale' => 'Explora casas, terrenos y oportunidades de inversión disponibles para compra directa.',
-            'rent' => 'Descubre propiedades disponibles para renta con atención directa de nuestro equipo.',
-            default => 'Explora propiedades publicadas directamente por nuestro equipo, con su propia página, galería y contacto inmediato.',
+            'sale' => 'Casas, terrenos y oportunidades que nuestro equipo publica con seguimiento directo.',
+            'rent' => 'Inventario de renta con contacto inmediato y página propia para revisar cada opción con calma.',
+            default => 'Explora el inventario publicado directamente por nuestro equipo, con galería, descripción y contacto claro en cada propiedad.',
         };
     @endphp
 
-    <section class="mx-auto max-w-6xl px-6 pb-16 pt-16 lg:pt-20">
-        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div class="max-w-2xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">Listados</p>
-                <h1 class="mt-3 text-4xl font-semibold text-zinc-900">{{ $heading }}</h1>
-                <p class="mt-3 text-base leading-relaxed text-zinc-700">{{ $description }}</p>
+    <section class="section-wrap pb-10 pt-10 lg:pt-14">
+        <div class="grid gap-8 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-end">
+            <div data-reveal>
+                <div class="section-label">Listados</div>
+                <h1 class="section-title text-4xl sm:text-5xl">{{ $heading }}</h1>
+                <p class="section-copy max-w-xl">{{ $description }}</p>
             </div>
-            <a href="{{ route('contact') }}" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 transition hover:-translate-y-0.5">Publicar o pedir más opciones</a>
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end" data-reveal data-reveal-delay="70">
+                <a href="{{ route('contact') }}" class="button-primary">Agenda una visita</a>
+                <a href="{{ route('properties.index') }}" class="button-secondary">Ver MLS completo</a>
+            </div>
         </div>
 
-        <div class="mt-8 flex flex-wrap gap-3">
-            <a href="{{ route('listings.index') }}" class="rounded-full px-4 py-2 text-sm font-semibold {{ empty($listingType) ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700 ring-1 ring-amber-100' }}">Todos</a>
-            <a href="{{ route('listings.sales') }}" class="rounded-full px-4 py-2 text-sm font-semibold {{ ($listingType ?? null) === 'sale' ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700 ring-1 ring-amber-100' }}">Venta</a>
-            <a href="{{ route('listings.rentals') }}" class="rounded-full px-4 py-2 text-sm font-semibold {{ ($listingType ?? null) === 'rent' ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700 ring-1 ring-amber-100' }}">Renta</a>
+        <div class="mt-8 flex flex-wrap gap-3" data-reveal data-reveal-delay="110">
+            <a href="{{ route('listings.index') }}" class="meta-pill {{ empty($listingType) ? '!border-amber-200 !bg-amber-50 !text-amber-700' : '' }}">Todos</a>
+            <a href="{{ route('listings.sales') }}" class="meta-pill {{ ($listingType ?? null) === 'sale' ? '!border-amber-200 !bg-amber-50 !text-amber-700' : '' }}">Venta</a>
+            <a href="{{ route('listings.rentals') }}" class="meta-pill {{ ($listingType ?? null) === 'rent' ? '!border-amber-200 !bg-amber-50 !text-amber-700' : '' }}">Renta</a>
         </div>
+    </section>
 
-        <div class="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <section class="section-wrap pb-16">
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             @forelse ($listings as $listing)
-                <article class="overflow-hidden rounded-[28px] border border-amber-100/70 bg-white/90 shadow-sm ring-1 ring-white/60">
+                <article class="property-card group" data-reveal data-reveal-delay="{{ ($loop->index % 3) * 60 }}">
                     <a href="{{ route('listings.show', $listing) }}" class="block aspect-[4/3] overflow-hidden bg-zinc-100">
                         @if ($listing->primaryImage())
-                            <img
-                                src="{{ $listing->primaryImage() }}"
-                                alt="{{ $listing->title }}"
-                                class="h-full w-full object-cover transition duration-700 hover:scale-105"
-                                loading="lazy"
-                            >
+                            <div class="property-media h-full">
+                                <img
+                                    src="{{ $listing->primaryImage() }}"
+                                    alt="{{ $listing->title }}"
+                                    class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                                    loading="lazy"
+                                >
+                            </div>
                         @else
                             <div class="flex h-full items-center justify-center text-zinc-400">Sin imagen</div>
                         @endif
                     </a>
+
                     <div class="space-y-4 px-5 py-5">
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <h2 class="text-xl font-semibold text-zinc-900">{{ $listing->title }}</h2>
+                                <h2 class="text-xl font-semibold">
+                                    <a href="{{ route('listings.show', $listing) }}" class="text-zinc-950 transition hover:text-amber-700 group-hover:text-amber-700">
+                                        {{ $listing->title }}
+                                    </a>
+                                </h2>
                                 @if ($listing->location)
-                                    <p class="mt-1 text-sm text-zinc-600">{{ $listing->location }}</p>
+                                    <p class="mt-2 text-sm text-zinc-600">{{ $listing->location }}</p>
                                 @endif
                             </div>
+
                             <div class="flex flex-wrap justify-end gap-2">
-                                <span class="rounded-full bg-zinc-900 px-3 py-1 text-[11px] font-semibold text-white">{{ $listing->listingTypeLabel() }}</span>
+                                <span class="meta-pill">{{ $listing->listingTypeLabel() }}</span>
                                 @if ($listing->featured)
-                                    <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">Destacado</span>
+                                    <span class="meta-pill !border-amber-200 !bg-amber-50 !text-amber-700">Destacado</span>
                                 @endif
                             </div>
                         </div>
@@ -66,24 +80,26 @@
                             <div class="text-lg font-semibold text-amber-700">{{ $listing->currency }} ${{ number_format((float) $listing->price, 0) }}</div>
                         @endif
 
-                        <div class="flex flex-wrap gap-2 text-xs text-zinc-700">
+                        <div class="flex flex-wrap gap-2">
                             @if ($listing->bedrooms)
-                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->bedrooms }} rec</span>
+                                <span class="meta-pill">{{ $listing->bedrooms }} recámaras</span>
                             @endif
                             @if ($listing->bathrooms)
-                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->bathrooms }} baños</span>
+                                <span class="meta-pill">{{ $listing->bathrooms }} baños</span>
                             @endif
                             @if ($listing->construction_m2)
-                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->construction_m2 }} m2 const.</span>
+                                <span class="meta-pill">{{ $listing->construction_m2 }} m2 const.</span>
                             @endif
                             @if ($listing->lot_m2)
-                                <span class="rounded-full bg-amber-50 px-2 py-1">{{ $listing->lot_m2 }} m2 terreno</span>
+                                <span class="meta-pill">{{ $listing->lot_m2 }} m2 terreno</span>
                             @endif
                         </div>
 
-                        <p class="text-sm leading-relaxed text-zinc-600">{{ Str::limit($listing->summary ?: strip_tags($listing->description ?? ''), 140) }}</p>
+                        <p class="text-sm leading-relaxed text-zinc-600">
+                            {{ Str::limit($listing->summary ?: strip_tags($listing->description ?? ''), 140) }}
+                        </p>
 
-                        <a href="{{ route('listings.show', $listing) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 hover:text-amber-800">
+                        <a href="{{ route('listings.show', $listing) }}" class="button-ghost px-0">
                             Ver propiedad
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
@@ -92,7 +108,7 @@
                     </div>
                 </article>
             @empty
-                <div class="rounded-[28px] border border-dashed border-amber-200 bg-white/70 px-6 py-12 text-center text-zinc-600 md:col-span-2 xl:col-span-3">
+                <div class="surface-panel px-6 py-12 text-center text-zinc-600 md:col-span-2 xl:col-span-3">
                     Aún no hay listados publicados.
                 </div>
             @endforelse

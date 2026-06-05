@@ -20,6 +20,7 @@ class ListingFactory extends Factory
         ];
 
         return [
+            'agent_id' => null,
             'title' => $title,
             'slug' => Str::slug($title).'-'.fake()->unique()->numerify('##'),
             'status' => 'published',

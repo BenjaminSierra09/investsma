@@ -1,7 +1,10 @@
 <?php
 
+use App\Mail\ContactMessage;
 use App\Models\Page;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 it('renders seo metadata on the home page', function () {
     $response = $this->get(route('home'));
@@ -39,6 +42,38 @@ it('renders seo metadata on static public routes', function (string $routeName, 
     ],
 ]);
 
+it('renders the contact page with a post form', function () {
+    $response = $this->get(route('contact'));
+
+    $response
+        ->assertOk()
+        ->assertSeeHtml('action="'.route('contact.submit').'"')
+        ->assertSeeHtml('method="POST"')
+        ->assertSee('Enviar mensaje');
+});
+
+it('submits contact inquiries through the public form', function () {
+    Mail::fake();
+
+    $response = $this->post(route('contact.submit'), [
+        'nombre' => 'María López',
+        'email' => 'maria@example.com',
+        'telefono' => '+52 415 000 0000',
+        'objetivo' => 'Vivir en San Miguel',
+        'mensaje' => 'Quiero comparar opciones cerca del centro.',
+    ]);
+
+    $response
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Gracias, recibimos tu mensaje. Te contactamos en breve.');
+
+    Mail::assertSent(ContactMessage::class, function (ContactMessage $mail): bool {
+        return $mail->hasTo('info@investsma.com')
+            && $mail->data['email'] === 'maria@example.com'
+            && $mail->data['nombre'] === 'María López';
+    });
+});
+
 it('renders seo metadata on published cms pages', function () {
     $page = Page::query()->create([
         'title' => 'Guía de inversión',
@@ -58,6 +93,9 @@ it('renders seo metadata on published cms pages', function () {
 });
 
 it('renders seo metadata on property detail pages', function () {
+    config()->set('cache.default', 'array');
+    Cache::flush();
+
     Http::fake([
         'https://ampisanmigueldeallende.com/api/v1/property/mls/*' => Http::response([
             'name' => 'Casa Luna',
@@ -76,10 +114,17 @@ it('renders seo metadata on property detail pages', function () {
         'mlsId' => 'MLS-123',
         'slug' => 'casa-luna',
     ]));
+    $secondResponse = $this->get(route('properties.show', [
+        'mlsId' => 'MLS-123',
+        'slug' => 'casa-luna',
+    ]));
 
     $response->assertOk();
+    $secondResponse->assertOk();
     $response->assertSee('<title>Casa Luna | investsma</title>', false);
     $response->assertSee('name="description" content="Casa con terraza, buena ubicación y potencial de renta."', false);
     $response->assertSee('rel="canonical" href="'.route('properties.show', ['mlsId' => 'MLS-123', 'slug' => 'casa-luna']).'"', false);
     $response->assertSee('property="og:image" content="https://example.com/casa-luna.jpg"', false);
+
+    Http::assertSentCount(1);
 });

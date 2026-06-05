@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\Agent;
 use App\Models\Listing;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -27,6 +30,8 @@ new class extends Component
     public string $currency = 'USD';
 
     public ?string $price = null;
+
+    public int|string|null $agent_id = null;
 
     public ?string $location = null;
 
@@ -80,6 +85,7 @@ new class extends Component
             $this->featured = $listing->featured;
             $this->currency = $listing->currency;
             $this->price = $listing->price ? (string) $listing->price : null;
+            $this->agent_id = $listing->agent_id;
             $this->location = $listing->location;
             $this->summary = $listing->summary;
             $this->description = $listing->description;
@@ -104,6 +110,7 @@ new class extends Component
                 'featured',
                 'currency',
                 'price',
+                'agent_id',
                 'location',
                 'summary',
                 'description',
@@ -129,6 +136,21 @@ new class extends Component
             $this->gallery = [];
             $this->photoUploads = [];
         }
+    }
+
+    #[Computed]
+    public function agents(): Collection
+    {
+        return Agent::query()
+            ->where(function ($query): void {
+                $query->where('is_active', true);
+
+                if ($this->agent_id) {
+                    $query->orWhere('id', $this->agent_id);
+                }
+            })
+            ->orderBy('name')
+            ->get();
     }
 
     public function updatedTitle(): void
@@ -176,6 +198,7 @@ new class extends Component
             'featured' => ['required', 'boolean'],
             'currency' => ['required', 'string', 'max:10'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'agent_id' => ['nullable', 'exists:agents,id'],
             'location' => ['nullable', 'string', 'max:255'],
             'summary' => ['nullable', 'string', 'max:600'],
             'description' => ['nullable', 'string'],
@@ -264,6 +287,12 @@ new class extends Component
                     <flux:select wire:model.live="currency" label="Moneda">
                         <option value="USD">USD</option>
                         <option value="MXN">MXN</option>
+                    </flux:select>
+                    <flux:select wire:model.live="agent_id" label="Agente asignado">
+                        <option value="">Sin agente</option>
+                        @foreach ($this->agents as $agent)
+                            <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                        @endforeach
                     </flux:select>
                     <flux:input wire:model.live="price" label="Precio" type="number" min="0" step="0.01" />
                     <flux:input wire:model.live="location" label="Ubicación" placeholder="Guadiana, San Miguel de Allende" />
@@ -376,6 +405,13 @@ new class extends Component
         </div>
 
         <div class="space-y-6">
+            <flux:card>
+                <div class="text-sm font-semibold text-zinc-800 dark:text-zinc-50">Agente y contacto</div>
+                <div class="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/80 p-4 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-300">
+                    El perfil del agente solo se mostrará en los listados creados desde este dashboard. Las propiedades del MLS de AMPI seguirán sin perfil asignado.
+                </div>
+            </flux:card>
+
             <flux:card>
                 <div class="text-sm font-semibold text-zinc-800 dark:text-zinc-50">Contacto del listado</div>
                 <div class="mt-4 grid gap-4">

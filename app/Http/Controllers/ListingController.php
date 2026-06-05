@@ -30,6 +30,8 @@ class ListingController extends Controller
     {
         abort_unless($listing->status === 'published', 404);
 
+        $listing->load('agent');
+
         return view('public.listings-show', [
             'listing' => $listing,
             'gallery' => collect($listing->gallery)
@@ -56,6 +58,7 @@ class ListingController extends Controller
     private function renderIndex(?string $listingType = null): View
     {
         $query = Listing::query()
+            ->with('agent')
             ->published()
             ->latest('featured')
             ->latest('published_at')

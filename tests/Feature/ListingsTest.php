@@ -25,6 +25,24 @@ it('shows only published listings on the public index', function () {
     expect($publishedListing->slug)->not->toBeEmpty();
 });
 
+it('renders clickable listing image and title on the public index', function () {
+    $listing = Listing::factory()->create([
+        'title' => 'Casa enlazada',
+        'listing_type' => 'sale',
+        'cover_image' => 'https://example.com/casa-enlazada.jpg',
+        'gallery' => ['https://example.com/casa-enlazada.jpg'],
+    ]);
+
+    $detailUrl = route('listings.show', $listing);
+
+    $this->get(route('listings.index'))
+        ->assertOk()
+        ->assertSeeHtml('href="'.$detailUrl.'"')
+        ->assertSeeHtml('alt="'.$listing->title.'"')
+        ->assertSee('Ver propiedad')
+        ->assertSee($listing->title);
+});
+
 it('filters listings by sale and rent routes', function () {
     Listing::factory()->forSale()->create([
         'title' => 'Casa en venta',

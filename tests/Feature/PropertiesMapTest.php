@@ -1,9 +1,12 @@
 <?php
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-test('properties map page renders api markers and detail links', function () {
+test('properties map page renders api markers, detail links, and forwards keyword filters', function () {
     config()->set('services.ampi.api_key', 'test-api-key');
+    config()->set('cache.default', 'array');
+    Cache::flush();
 
     Http::fake(function ($request) {
         $page = (int) $request->data()['page'];
@@ -69,9 +72,11 @@ test('properties map page renders api markers and detail links', function () {
         }, 200);
     });
 
-    $response = $this->get(route('properties.map', ['category' => 'Residencial']));
+    $response = $this->get(route('properties.map', ['category' => 'Residencial', 'keywords' => 'rooftop']));
+    $secondResponse = $this->get(route('properties.map', ['category' => 'Residencial', 'keywords' => 'rooftop']));
 
     $response->assertOk();
+    $secondResponse->assertOk();
     $response->assertViewHas('properties', function (array $properties): bool {
         if (count($properties) !== 2) {
             return false;
@@ -88,4 +93,7 @@ test('properties map page renders api markers and detail links', function () {
     $response->assertDontSee('Sin coordenadas');
 
     Http::assertSentCount(2);
+    Http::assertSent(function ($request): bool {
+        return ($request->data()['keywords'] ?? null) === 'rooftop';
+    });
 });

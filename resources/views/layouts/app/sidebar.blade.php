@@ -23,6 +23,9 @@
                     <flux:sidebar.item icon="building-office-2" :href="route('cms.listings')" :current="request()->routeIs('cms.listings*')" wire:navigate>
                         {{ __('Listados') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="user-circle" :href="route('cms.agents')" :current="request()->routeIs('cms.agents*')" wire:navigate>
+                        {{ __('Agentes') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="users" :href="route('cms.users')" :current="request()->routeIs('cms.users')" wire:navigate>
                         {{ __('Usuarios') }}
                     </flux:sidebar.item>

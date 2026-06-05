@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\AmpiPropertyApi;
 use App\Support\SeoData;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PropertiesController extends Controller
 {
+    public function __construct(protected AmpiPropertyApi $ampiPropertyApi) {}
+
     /**
      * Display the MLS search form
      */
@@ -34,63 +36,28 @@ class PropertiesController extends Controller
      */
     private function getNeighborhoods(): array
     {
-        try {
-            $apiKey = config('services.ampi.api_key');
-            $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ])->get('https://ampisanmigueldeallende.com/api/v1/neighborhoods');
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch neighborhoods', ['error' => $e->getMessage()]);
-        }
-
-        return [];
+        return $this->ampiPropertyApi->fetchNeighborhoodOptions();
     }
 
     /**
      * Search MLS properties via API
      */
-    public function search(Request $request)
+    public function search(Request $request): View|RedirectResponse
     {
         try {
-            // Build query parameters
             $params = $this->buildQueryParams($request);
+            $results = $this->ampiPropertyApi->search($params);
 
-            // Get API configuration
-            $apiKey = config('services.ampi.api_key');
-            $baseUrl = 'https://ampisanmigueldeallende.com/api/v1/properties/search';
-
-            // Make API request
-            $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ])->get($baseUrl, $params);
-
-            if ($response->successful()) {
-                $results = $response->json();
-                $neighborhoods = $this->getNeighborhoods();
-
-                return view('properties', [
-                    'results' => $results,
-                    'searchParams' => $params,
-                    'neighborhoods' => $neighborhoods,
-                ]);
-            } else {
-                Log::error('AMPI API Error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
+            if (! is_array($results)) {
                 return back()->with('error', 'Error al buscar propiedades. Por favor, inténtalo de nuevo.');
             }
 
-        } catch (\Exception $e) {
-            Log::error('MLS Search Error: '.$e->getMessage());
-
+            return view('properties', [
+                'results' => $results,
+                'searchParams' => $params,
+                'neighborhoods' => $this->getNeighborhoods(),
+            ]);
+        } catch (\Throwable) {
             return back()->with('error', 'Ocurrió un error al procesar tu búsqueda.');
         }
     }
@@ -110,9 +77,11 @@ class PropertiesController extends Controller
         }
 
         if ($request->filled('neighborhood')) {
-            $params['neighborhood'] = is_array($request->neighborhood)
-                ? implode(',', $request->neighborhood)
-                : $request->neighborhood;
+            $params['neighborhood'] = array_values(array_filter(
+                is_array($request->neighborhood)
+                    ? $request->neighborhood
+                    : [trim((string) $request->neighborhood)]
+            ));
         }
 
         if ($request->filled('category')) {
@@ -129,6 +98,7 @@ class PropertiesController extends Controller
 
         // Single value fields
         $singleFields = [
+            'keywords',
             'currency',
             'price_min',
             'price_max',
@@ -162,8 +132,7 @@ class PropertiesController extends Controller
 
     private function fetchPropertiesForMap(Request $request): array
     {
-        $apiKey = config('services.ampi.api_key');
-        if (! $apiKey) {
+        if (! $this->ampiPropertyApi->isConfigured()) {
             return [];
         }
 
@@ -174,50 +143,34 @@ class PropertiesController extends Controller
         $maxPages = max(1, (int) $request->integer('map_pages', 10));
         $properties = collect();
 
-        try {
-            while ($page <= $lastPage && $page <= $maxPages) {
-                $response = Http::withHeaders([
-                    'accept' => 'application/json',
-                    'x-api-key' => $apiKey,
-                ])->get('https://ampisanmigueldeallende.com/api/v1/properties/search', [
-                    ...$params,
-                    'page' => $page,
-                ]);
+        while ($page <= $lastPage && $page <= $maxPages) {
+            $payload = $this->ampiPropertyApi->search([
+                ...$params,
+                'page' => $page,
+            ]);
 
-                if (! $response->successful()) {
-                    Log::error('AMPI map API error', [
-                        'status' => $response->status(),
-                        'body' => $response->body(),
-                        'page' => $page,
-                    ]);
-
-                    break;
-                }
-
-                $payload = $response->json();
-                $items = collect($payload['data'] ?? $payload)
-                    ->map(fn (array $property): ?array => $this->normalizePropertyForMap($property))
-                    ->filter();
-
-                $properties = $properties->merge($items);
-
-                if ($items->isEmpty()) {
-                    break;
-                }
-
-                $lastPage = $this->resolveMapLastPage($payload, $page);
-                $page++;
+            if (! is_array($payload)) {
+                break;
             }
 
-            return $properties
-                ->unique('id')
-                ->values()
-                ->all();
-        } catch (\Throwable $e) {
-            Log::error('AMPI map API exception', ['message' => $e->getMessage()]);
+            $items = collect($payload['data'] ?? $payload)
+                ->map(fn (array $property): ?array => $this->normalizePropertyForMap($property))
+                ->filter();
 
-            return [];
+            $properties = $properties->merge($items);
+
+            if ($items->isEmpty()) {
+                break;
+            }
+
+            $lastPage = $this->resolveMapLastPage($payload, $page);
+            $page++;
         }
+
+        return $properties
+            ->unique('id')
+            ->values()
+            ->all();
     }
 
     private function resolveMapLastPage(array $payload, int $currentPage): int
@@ -271,55 +224,41 @@ class PropertiesController extends Controller
     /**
      * Get property details
      */
-    public function show($mlsId, $slug = null)
+    public function show(string $mlsId, ?string $slug = null): View|RedirectResponse
     {
         try {
-            $apiKey = config('services.ampi.api_key');
-            $baseUrl = "https://ampisanmigueldeallende.com/api/v1/property/mls/{$mlsId}";
+            $property = $this->ampiPropertyApi->fetchProperty($mlsId);
 
-            $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ])->get($baseUrl);
-
-            if ($response->successful()) {
-                $property = $response->json();
-
-                // Generate slug from property name
-                $propertySlug = Str::slug($property['name']);
-
-                // Redirect to correct URL if slug is missing or incorrect
-                if ($slug !== $propertySlug) {
-                    return redirect()->route('properties.show', ['mlsId' => $mlsId, 'slug' => $propertySlug], 301);
-                }
-
-                // Set SEO metadata
-                $locale = app()->getLocale();
-                $description = $locale === 'es' && ! empty($property['description_short_es'])
-                    ? $property['description_short_es']
-                    : $property['description_short_en'];
-
-                $description = Str::limit(strip_tags($description), 160, '...');
-                $title = $property['name'];
-
-                SeoData::apply(
-                    title: $title.' | investsma',
-                    description: $description,
-                    keywords: [$title, $property['category'] ?? null, $property['neighborhood'] ?? null, $property['city'] ?? null, 'San Miguel de Allende', 'real estate', 'property'],
-                    image: $property['photos'][0] ?? asset('logotipo.png'),
-                    type: 'article',
-                    schemaType: 'Product',
-                );
-
-                return view('public.properties', compact('property'));
-            } else {
+            if (! is_array($property)) {
                 return redirect()->route('properties.index')
                     ->with('error', 'Propiedad no encontrada.');
             }
 
-        } catch (\Exception $e) {
-            Log::error('MLS Property Detail Error: '.$e->getMessage());
+            $propertySlug = Str::slug($property['name']);
 
+            if ($slug !== $propertySlug) {
+                return redirect()->route('properties.show', ['mlsId' => $mlsId, 'slug' => $propertySlug], 301);
+            }
+
+            $locale = app()->getLocale();
+            $description = $locale === 'es' && ! empty($property['description_short_es'])
+                ? $property['description_short_es']
+                : $property['description_short_en'];
+
+            $description = Str::limit(strip_tags($description), 160, '...');
+            $title = $property['name'];
+
+            SeoData::apply(
+                title: $title.' | investsma',
+                description: $description,
+                keywords: [$title, $property['category'] ?? null, $property['neighborhood'] ?? null, $property['city'] ?? null, 'San Miguel de Allende', 'real estate', 'property'],
+                image: $property['photos'][0] ?? asset('logotipo.png'),
+                type: 'article',
+                schemaType: 'Product',
+            );
+
+            return view('public.properties', compact('property'));
+        } catch (\Throwable) {
             return redirect()->route('properties.index')
                 ->with('error', 'Error al cargar los detalles de la propiedad.');
         }

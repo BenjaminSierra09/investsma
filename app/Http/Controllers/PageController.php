@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Mail\ContactMessage;
 use App\Models\Page;
+use App\Support\AmpiPropertyApi;
 use App\Support\EditorJsRenderer;
 use App\Support\SeoData;
 use App\Support\StaticPageRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -18,6 +18,8 @@ use Illuminate\View\View;
 
 class PageController extends Controller
 {
+    public function __construct(protected AmpiPropertyApi $ampiPropertyApi) {}
+
     public function home(Request $request): View
     {
         $filters = $request->only([
@@ -43,7 +45,7 @@ class PageController extends Controller
 
         return view('public.home', [
             'properties' => $this->fetchOfficeProperties($filters),
-            'neighborhoods' => $this->fetchNeighborhoods(),
+            'neighborhoods' => $this->fetchNeighborhoods($request),
         ]);
     }
 
@@ -150,92 +152,67 @@ class PageController extends Controller
 
     private function fetchOfficeProperties(array $filters = []): array
     {
-        $apiKey = config('services.ampi.api_key');
-
-        if (! $apiKey) {
+        if (! $this->ampiPropertyApi->isConfigured()) {
             return [];
         }
 
-        try {
-            $allowed = [
-                'office_id',
-                'neighborhood',
-                'category',
-                'status',
-                'currency',
-                'price_min',
-                'price_max',
-                'bedrooms',
-                'bathrooms',
-                'floors',
-                'construction_meters_min',
-                'construction_meters_max',
-                'lot_meters_min',
-                'lot_meters_max',
-                'furnished',
-                'parking_type',
-                'with_yard',
-                'pool',
-                'casita',
-                'gated_comm',
-                'page',
-                'per_page',
-            ];
+        $allowed = [
+            'office_id',
+            'neighborhood',
+            'category',
+            'status',
+            'currency',
+            'price_min',
+            'price_max',
+            'bedrooms',
+            'bathrooms',
+            'floors',
+            'construction_meters_min',
+            'construction_meters_max',
+            'lot_meters_min',
+            'lot_meters_max',
+            'furnished',
+            'parking_type',
+            'with_yard',
+            'pool',
+            'casita',
+            'gated_comm',
+            'page',
+            'per_page',
+        ];
 
-            $params = array_filter(
-                array_merge(
-                    ['office_id' => '32', 'page' => 1, 'per_page' => 12],
-                    Arr::only($filters, $allowed)
-                ),
-                fn ($value) => $value !== null && $value !== ''
-            );
+        $params = array_filter(
+            array_merge(
+                ['office_id' => '32', 'page' => 1, 'per_page' => 12],
+                Arr::only($filters, $allowed)
+            ),
+            fn ($value) => $value !== null && $value !== ''
+        );
 
-            $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ])->get('https://ampisanmigueldeallende.com/api/v1/properties/search', $params);
+        $results = $this->ampiPropertyApi->search($params);
 
-            if ($response->successful()) {
-                return $response->json();
-            }
-
-            Log::error('Failed to fetch office properties', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Exception fetching office properties', ['message' => $e->getMessage()]);
+        if (is_array($results)) {
+            return $results;
         }
+
+        Log::error('Failed to fetch office properties', ['params' => $params]);
 
         return [];
     }
 
-    private function fetchNeighborhoods(): array
+    private function fetchNeighborhoods(Request $request): array
     {
-        $apiKey = config('services.ampi.api_key');
-        if (! $apiKey) {
-            return [];
+        $neighborhoods = $this->ampiPropertyApi->fetchNeighborhoodOptions(['office_id' => '32']);
+        $selectedNeighborhood = trim((string) $request->string('neighborhood'));
+
+        if ($selectedNeighborhood === '') {
+            return $neighborhoods;
         }
 
-        try {
-            $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ])->get('https://ampisanmigueldeallende.com/api/v1/neighborhoods');
-
-            if ($response->successful()) {
-                return collect($response->json())
-                    ->pluck('name')
-                    ->filter()
-                    ->unique()
-                    ->sort()
-                    ->values()
-                    ->all();
-            }
-        } catch (\Throwable $e) {
-            Log::error('Failed to fetch neighborhoods on home', ['message' => $e->getMessage()]);
-        }
-
-        return [];
+        return collect([$selectedNeighborhood, ...$neighborhoods])
+            ->unique(fn (string $item): string => Str::lower($item))
+            ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
+            ->all();
     }
 }

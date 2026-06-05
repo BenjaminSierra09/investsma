@@ -24,6 +24,8 @@ import Paragraph from "@editorjs/paragraph";
 import AlignmentTune from "editor-js-alignment-tune";
 import DragDrop from "editorjs-drag-drop";
 import Link from "@coolbytes/editorjs-link";
+import Choices from "choices.js";
+import "choices.js/public/assets/styles/choices.css";
 
 window.browserSupportsWebAuthn = browserSupportsWebAuthn;
 window.startAuthentication = startAuthentication;
@@ -600,3 +602,200 @@ if (document.readyState === "loading") {
 
 document.addEventListener("livewire:load", scheduleEditorSetup);
 document.addEventListener("livewire:navigated", scheduleEditorSetup);
+
+const choiceInstances = new WeakMap();
+
+const getChoicesPlaceholder = (element) =>
+    element.dataset.choicesPlaceholderValue || "Selecciona una opción";
+
+const getLivewireComponent = (element) => {
+    const componentElement = element.closest("[wire\\:id]");
+    const componentId = componentElement?.getAttribute("wire:id");
+
+    if (!componentId || !window.Livewire) {
+        return null;
+    }
+
+    return window.Livewire.find(componentId);
+};
+
+const syncChoicesWithLivewire = (element) => {
+    const modelName = element.dataset.livewireModel;
+    const livewireComponent = getLivewireComponent(element);
+
+    if (!modelName || !livewireComponent) {
+        return;
+    }
+
+    const value = element.multiple
+        ? Array.from(element.selectedOptions).map((option) => option.value)
+        : element.value;
+
+    livewireComponent.$set(modelName, value, false);
+};
+
+const setChoicesValue = (element, value) => {
+    const instance = choiceInstances.get(element);
+
+    if (!instance) {
+        return;
+    }
+
+    const values = Array.isArray(value)
+        ? value.filter(Boolean)
+        : value
+          ? [value]
+          : [];
+
+    instance.removeActiveItems();
+
+    if (values.length > 0) {
+        instance.setChoiceByValue(values);
+    }
+};
+
+const initializeChoices = (root = document) => {
+    root.querySelectorAll("select[data-choices]").forEach((element) => {
+        if (choiceInstances.has(element)) {
+            return;
+        }
+
+        const instance = new Choices(element, {
+            allowHTML: false,
+            duplicateItemsAllowed: false,
+            itemSelectText: "",
+            noChoicesText: "No hay opciones disponibles",
+            noResultsText: "No encontramos coincidencias",
+            placeholder: true,
+            placeholderValue: getChoicesPlaceholder(element),
+            removeItemButton:
+                element.dataset.choicesRemoveItemButton === "true",
+            searchEnabled: true,
+            searchPlaceholderValue: getChoicesPlaceholder(element),
+            shouldSort: false,
+        });
+
+        choiceInstances.set(element, instance);
+        syncChoicesWithLivewire(element);
+
+        element.addEventListener("change", () => {
+            syncChoicesWithLivewire(element);
+        });
+    });
+};
+
+let revealObserver;
+
+const initializeSiteChrome = () => {
+    document.documentElement.classList.add("js");
+
+    const toggle = document.getElementById("menu-toggle");
+    const mobileMenu = document.getElementById("mobile-menu");
+
+    if (toggle && mobileMenu && !toggle.dataset.menuBound) {
+        const syncMenuState = () => {
+            const isExpanded = !mobileMenu.classList.contains("hidden");
+            toggle.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        };
+
+        toggle.dataset.menuBound = "true";
+        syncMenuState();
+
+        toggle.addEventListener("click", () => {
+            mobileMenu.classList.toggle("hidden");
+            syncMenuState();
+        });
+    }
+};
+
+const initializeRevealAnimations = (root = document) => {
+    const elements = root.querySelectorAll("[data-reveal]:not([data-reveal-ready])");
+
+    if (!elements.length) {
+        return;
+    }
+
+    revealObserver ??= new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+
+                entry.target.classList.add("is-visible");
+                revealObserver?.unobserve(entry.target);
+            });
+        },
+        {
+            threshold: 0.14,
+            rootMargin: "0px 0px -12% 0px",
+        },
+    );
+
+    elements.forEach((element) => {
+        element.dataset.revealReady = "true";
+
+        if (!element.style.transitionDelay && element.dataset.revealDelay) {
+            element.style.transitionDelay = `${element.dataset.revealDelay}ms`;
+        }
+
+        revealObserver.observe(element);
+    });
+};
+
+const initializeSpotlights = (root = document) => {
+    root.querySelectorAll("[data-spotlight]").forEach((element) => {
+        if (element.dataset.spotlightBound) {
+            return;
+        }
+
+        const updateSpotlight = (event) => {
+            const bounds = element.getBoundingClientRect();
+            const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+            const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+
+            element.style.setProperty("--spotlight-x", `${x}%`);
+            element.style.setProperty("--spotlight-y", `${y}%`);
+        };
+
+        element.dataset.spotlightBound = "true";
+        element.style.setProperty("--spotlight-x", "50%");
+        element.style.setProperty("--spotlight-y", "50%");
+        element.addEventListener("pointermove", updateSpotlight);
+        element.addEventListener("pointerleave", () => {
+            element.style.setProperty("--spotlight-x", "50%");
+            element.style.setProperty("--spotlight-y", "50%");
+        });
+    });
+};
+
+const initializePublicExperience = (root = document) => {
+    initializeChoices(root);
+    initializeSiteChrome();
+    initializeRevealAnimations(root);
+    initializeSpotlights(root);
+};
+
+document.addEventListener("DOMContentLoaded", () => initializePublicExperience());
+document.addEventListener("livewire:navigated", () => initializePublicExperience());
+
+window.addEventListener("property-search-filters-reset", (event) => {
+    const scope =
+        event.target instanceof HTMLElement ? event.target : document;
+    const filters = event.detail?.filters || {};
+
+    scope.querySelectorAll("select[data-livewire-model]").forEach((element) => {
+        const modelName = element.dataset.livewireModel;
+
+        setChoicesValue(
+            element,
+            Object.prototype.hasOwnProperty.call(filters, modelName)
+                ? filters[modelName]
+                : element.multiple
+                  ? []
+                  : "",
+        );
+
+        syncChoicesWithLivewire(element);
+    });
+});

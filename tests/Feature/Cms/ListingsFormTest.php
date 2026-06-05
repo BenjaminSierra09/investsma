@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Agent;
 use App\Models\Listing;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -10,6 +11,7 @@ it('creates a listing from the cms form', function () {
     Storage::fake('public');
 
     $user = User::factory()->create();
+    $agent = Agent::factory()->create();
 
     $this->actingAs($user);
 
@@ -20,6 +22,7 @@ it('creates a listing from the cms form', function () {
         ->set('listing_type', 'rent')
         ->set('currency', 'USD')
         ->set('price', '450000')
+        ->set('agent_id', $agent->id)
         ->set('location', 'Guadiana, San Miguel de Allende')
         ->set('summary', 'Casa lista para habitar.')
         ->set('description', 'Descripción amplia de la propiedad.')
@@ -42,7 +45,8 @@ it('creates a listing from the cms form', function () {
         ->title->toBe('Casa Magnolia')
         ->slug->toBe('casa-magnolia')
         ->status->toBe('published')
-        ->listing_type->toBe('rent');
+        ->listing_type->toBe('rent')
+        ->agent_id->toBe($agent->id);
 
     expect($listing->gallery)->toHaveCount(2);
     expect($listing->cover_image)->toBe($listing->gallery[0]);

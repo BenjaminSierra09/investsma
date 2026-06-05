@@ -2,18 +2,25 @@
 
 namespace App\Livewire\Public;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Support\AmpiPropertyApi;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class PropertiesSearch extends Component
 {
+    protected AmpiPropertyApi $ampiPropertyApi;
+
     public array $neighborhoods = [];
+
     public array $results = [];
+
     public array $searchParams = [];
+
     public ?string $errorMessage = null;
 
     protected $queryString = [
+        'keywords' => ['except' => ''],
         'office_id' => ['except' => ''],
         'neighborhood' => ['except' => []],
         'category' => ['except' => ''],
@@ -38,36 +45,67 @@ class PropertiesSearch extends Component
         'perPage' => ['except' => 25],
     ];
 
+    public string $keywords = '';
+
     public string $office_id = '';
+
     public $neighborhood = [];
+
     public string $category = '';
+
     public string $status = '';
 
     public ?string $currency = null;
+
     public ?string $price_min = null;
+
     public ?string $price_max = null;
+
     public ?string $floors = null;
+
     public ?string $construction_meters_min = null;
+
     public ?string $construction_meters_max = null;
+
     public ?string $lot_meters_min = null;
+
     public ?string $lot_meters_max = null;
+
     public ?string $bathrooms = null;
+
     public ?string $bedrooms = null;
+
     public ?string $furnished = null;
+
     public ?string $parking_type = null;
+
     public ?string $with_yard = null;
+
     public ?string $pool = null;
+
     public ?string $casita = null;
+
     public ?string $gated_comm = null;
 
     public int $page = 1;
+
     public int $perPage = 25;
+
+    public function boot(AmpiPropertyApi $ampiPropertyApi): void
+    {
+        $this->ampiPropertyApi = $ampiPropertyApi;
+    }
 
     public function mount(): void
     {
-        $this->neighborhoods = $this->getNeighborhoods();
         $this->hydrateFromQuery(request()->all());
+        $this->neighborhoods = $this->resolveNeighborhoodOptions();
         $this->search();
+    }
+
+    public function hydrate(): void
+    {
+        $this->neighborhood = $this->toArrayList($this->neighborhood);
     }
 
     public function updating($name, $value): void
@@ -75,6 +113,11 @@ class PropertiesSearch extends Component
         if ($name !== 'page') {
             $this->page = 1;
         }
+    }
+
+    public function updatedNeighborhood($value): void
+    {
+        $this->neighborhood = $this->toArrayList($value);
     }
 
     public function updatedPage(): void
@@ -101,40 +144,30 @@ class PropertiesSearch extends Component
         $this->errorMessage = null;
         $params = $this->buildQueryParams();
 
-        $apiKey = config('services.ampi.api_key');
-        if (! $apiKey) {
+        if (! $this->ampiPropertyApi->isConfigured()) {
             $this->errorMessage = 'Falta configurar la API key de AMPI.';
             $this->results = [];
+
             return;
         }
 
-        try {
-            $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ])->get('https://ampisanmigueldeallende.com/api/v1/properties/search', $params);
+        $results = $this->ampiPropertyApi->search($params);
 
-            if ($response->successful()) {
-                $this->results = $response->json();
-                $this->searchParams = $params;
-            } else {
-                Log::error('AMPI API error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-                $this->errorMessage = 'Error al buscar propiedades. Intenta de nuevo en unos minutos.';
-                $this->results = [];
-            }
-        } catch (\Throwable $e) {
-            Log::error('AMPI API exception', ['message' => $e->getMessage()]);
+        if (! is_array($results)) {
             $this->errorMessage = 'No pudimos conectarnos con AMPI. Intenta más tarde.';
             $this->results = [];
+
+            return;
         }
+
+        $this->results = $results;
+        $this->searchParams = $params;
     }
 
     public function resetFilters(): void
     {
         $this->reset([
+            'keywords',
             'office_id',
             'neighborhood',
             'category',
@@ -160,9 +193,10 @@ class PropertiesSearch extends Component
 
         $this->page = 1;
         $this->search();
+        $this->dispatch('property-search-filters-reset', filters: $this->currentFilterState());
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.public.properties-search')
             ->layout('layouts.public', [
@@ -178,11 +212,12 @@ class PropertiesSearch extends Component
         foreach ($arrayFields as $field) {
             $value = $this->{$field};
             if (is_array($value) && count(array_filter($value))) {
-                $params[$field] = implode(',', array_filter($value));
+                $params[$field] = array_values(array_filter($value));
             }
         }
 
         $singleFields = [
+            'keywords',
             'office_id',
             'category',
             'status',
@@ -219,6 +254,7 @@ class PropertiesSearch extends Component
 
     private function hydrateFromQuery(array $params): void
     {
+        $this->keywords = $params['keywords'] ?? $this->keywords;
         $this->office_id = $params['office_id'] ?? $this->office_id;
         $this->category = $params['category'] ?? $this->category;
         $this->status = $params['status'] ?? $this->status;
@@ -235,8 +271,8 @@ class PropertiesSearch extends Component
         $this->furnished = $params['furnished'] ?? $this->furnished;
         $this->parking_type = $params['parking_type'] ?? $this->parking_type;
         $this->with_yard = $params['with_yard'] ?? $this->with_yard;
-        $this->pool = $params['pool'] ?? $this->pool;
-        $this->casita = $params['casita'] ?? $this->casita;
+        $this->pool = $this->normalizeYesNoValue($params['pool'] ?? $this->pool);
+        $this->casita = $this->normalizeYesNoValue($params['casita'] ?? $this->casita);
         $this->gated_comm = $params['gated_comm'] ?? $this->gated_comm;
 
         if (isset($params['page'])) {
@@ -255,38 +291,45 @@ class PropertiesSearch extends Component
         }
 
         if (is_string($value)) {
-            return array_filter(array_map('trim', explode(',', $value)));
+            $trimmedValue = trim($value);
+
+            return $trimmedValue === '' ? [] : [$trimmedValue];
         }
 
         return [];
     }
 
-    private function getNeighborhoods(): array
+    private function resolveNeighborhoodOptions(): array
     {
-        $apiKey = config('services.ampi.api_key');
-        if (! $apiKey) {
-            return [];
-        }
+        return collect($this->toArrayList($this->neighborhood))
+            ->merge($this->toArrayList($this->ampiPropertyApi->fetchNeighborhoodOptions()))
+            ->filter(fn (mixed $item): bool => is_string($item) && filled(trim($item)))
+            ->map(fn (string $item): string => trim($item))
+            ->unique(fn (string $item): string => Str::lower($item))
+            ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
+            ->all();
+    }
 
-        try {
-            $response = Http::withHeaders([
-                'accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ])->get('https://ampisanmigueldeallende.com/api/v1/neighborhoods');
+    private function normalizeYesNoValue(?string $value): ?string
+    {
+        return match (Str::lower((string) $value)) {
+            'yes' => 'Yes',
+            'no' => 'No',
+            default => $value,
+        };
+    }
 
-            if ($response->successful()) {
-                return collect($response->json())
-                    ->pluck('name')
-                    ->filter()
-                    ->unique()
-                    ->sort()
-                    ->values()
-                    ->all();
-            }
-        } catch (\Throwable $e) {
-            Log::error('Failed to fetch neighborhoods', ['message' => $e->getMessage()]);
-        }
-
-        return [];
+    private function currentFilterState(): array
+    {
+        return [
+            'keywords' => $this->keywords,
+            'neighborhood' => $this->neighborhood,
+            'category' => $this->category,
+            'status' => $this->status,
+            'currency' => $this->currency,
+            'pool' => $this->pool,
+            'casita' => $this->casita,
+        ];
     }
 }
