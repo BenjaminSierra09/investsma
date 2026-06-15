@@ -17,6 +17,20 @@ it('renders seo metadata on the home page', function () {
     $response->assertSee("gtag('config', 'G-B7R99X31XB');", false);
 });
 
+it('redirects production traffic to the canonical secure root without public prefix', function (string $url, string $expectedUrl) {
+    config()->set('site.canonical_url', 'https://investsma.com');
+    config()->set('site.canonical_hosts', ['investsma.com', 'www.investsma.com']);
+
+    $this->get($url)
+        ->assertMovedPermanently()
+        ->assertRedirect($expectedUrl);
+})->with([
+    'http public root' => ['http://investsma.com/public', 'https://investsma.com/'],
+    'http path' => ['http://investsma.com/nosotros', 'https://investsma.com/nosotros'],
+    'www host' => ['https://www.investsma.com/contacto?utm=test', 'https://investsma.com/contacto?utm=test'],
+    'public path' => ['https://investsma.com/public/listados', 'https://investsma.com/listados'],
+]);
+
 it('renders seo metadata on static public routes', function (string $routeName, string $title, string $description) {
     $response = $this->get(route($routeName));
 

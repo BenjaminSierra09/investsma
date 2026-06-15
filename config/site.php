@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'canonical_url' => env('SITE_CANONICAL_URL', 'https://investsma.com'),
+
+    'canonical_hosts' => array_filter(array_map('trim', explode(',', env('SITE_CANONICAL_HOSTS', 'investsma.com,www.investsma.com')))),
+
     'menus' => [
         'main' => 'Menú principal',
     ],

@@ -5,6 +5,19 @@
 
     RewriteEngine On
 
+    # Remove the leaked /public prefix from old hosting redirects.
+    RewriteCond %{HTTP_HOST} ^(www\.)?investsma\.com$ [NC]
+    RewriteRule ^public/?(.*)$ https://investsma.com/$1 [L,R=301]
+
+    # Force the production canonical URL before Laravel handles the request.
+    RewriteCond %{HTTP_HOST} ^(www\.)?investsma\.com$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+    RewriteRule ^(.*)$ https://investsma.com/$1 [L,R=301]
+
+    RewriteCond %{HTTP_HOST} ^www\.investsma\.com$ [NC]
+    RewriteRule ^(.*)$ https://investsma.com/$1 [L,R=301]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

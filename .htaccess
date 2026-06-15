@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Remove the leaked /public prefix even if the hosting document root points here.
+    RewriteCond %{HTTP_HOST} ^(www\.)?investsma\.com$ [NC]
+    RewriteRule ^public/?(.*)$ https://investsma.com/$1 [L,R=301]
+
+    # Force the production canonical URL before forwarding into Laravel's public directory.
+    RewriteCond %{HTTP_HOST} ^(www\.)?investsma\.com$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+    RewriteRule ^(.*)$ https://investsma.com/$1 [L,R=301]
+
+    RewriteCond %{HTTP_HOST} ^www\.investsma\.com$ [NC]
+    RewriteRule ^(.*)$ https://investsma.com/$1 [L,R=301]
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
