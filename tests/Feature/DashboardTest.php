@@ -12,5 +12,17 @@ test('authenticated users can visit the dashboard', function () {
     $this->actingAs($user);
 
     $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    $response->assertRedirect(route('cms.pages'));
+});
+
+test('dashboard cms routes use the dashboard prefix', function () {
+    expect(route('cms.pages', absolute: false))->toBe('/dashboard/paginas');
+});
+
+test('old cms page routes redirect to the dashboard prefix', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $response = $this->get('/cms/paginas');
+    $response->assertRedirect('/dashboard/paginas');
 });

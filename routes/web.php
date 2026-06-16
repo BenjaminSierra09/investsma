@@ -22,21 +22,28 @@ Route::get('/listados/renta', [ListingController::class, 'rentals'])->name('list
 Route::get('/listados/{listing:slug}', [ListingController::class, 'show'])->name('listings.show');
 Route::post('/listados/{listing:slug}/contacto', [ListingController::class, 'inquire'])->name('listings.inquire');
 
-Route::get('dashboard', function () {
-    return redirect()->route('cms.pages');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::livewire('/cms/paginas', 'pages::cms.pages.index')->name('cms.pages');
-    Route::livewire('/cms/paginas/form/{pageId?}', 'pages::cms.pages.form')->name('cms.pages.form');
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('cms.pages');
+        })->name('dashboard');
 
-    Route::livewire('/cms/usuarios', 'pages::cms.users.index')->name('cms.users');
-    Route::livewire('/cms/menu-principal', 'pages::cms.menus.index')->name('cms.menus');
-    Route::livewire('/cms/menu-principal/form', 'pages::cms.menus.form')->name('cms.menus.form');
-    Route::livewire('/cms/agentes', 'pages::cms.agents.index')->name('cms.agents');
-    Route::livewire('/cms/agentes/form/{agentId?}', 'pages::cms.agents.form')->name('cms.agents.form');
-    Route::livewire('/cms/listados', 'pages::cms.listings.index')->name('cms.listings');
-    Route::livewire('/cms/listados/form/{listingId?}', 'pages::cms.listings.form')->name('cms.listings.form');
+        Route::livewire('/paginas', 'pages::cms.pages.index')->name('cms.pages');
+        Route::livewire('/paginas/form/{pageId?}', 'pages::cms.pages.form')->name('cms.pages.form');
+
+        Route::livewire('/usuarios', 'pages::cms.users.index')->name('cms.users');
+        Route::livewire('/menu-principal', 'pages::cms.menus.index')->name('cms.menus');
+        Route::livewire('/menu-principal/form', 'pages::cms.menus.form')->name('cms.menus.form');
+        Route::livewire('/agentes', 'pages::cms.agents.index')->name('cms.agents');
+        Route::livewire('/agentes/form/{agentId?}', 'pages::cms.agents.form')->name('cms.agents.form');
+        Route::livewire('/listados', 'pages::cms.listings.index')->name('cms.listings');
+        Route::livewire('/listados/form/{listingId?}', 'pages::cms.listings.form')->name('cms.listings.form');
+    });
+
+    Route::redirect('/cms', '/dashboard');
+    Route::get('/cms/{path}', function (string $path) {
+        return redirect('/dashboard/'.$path);
+    })->where('path', '.*');
 
     Route::post('/editorjs/upload', [EditorJsUploadController::class, 'upload'])->name('editorjs.upload');
     Route::post('/editorjs/fetch', [EditorJsUploadController::class, 'fetch'])->name('editorjs.fetch');
