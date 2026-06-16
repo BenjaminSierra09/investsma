@@ -641,7 +641,19 @@ class AmpiPropertyApi
         if (is_string($photo)) {
             $url = trim($photo);
 
-            return $url !== '' ? $url : null;
+            if ($url === '') {
+                return null;
+            }
+
+            if (Str::startsWith($url, ['http://', 'https://'])) {
+                return $url;
+            }
+
+            if (Str::startsWith($url, '//')) {
+                return 'https:'.$url;
+            }
+
+            return rtrim((string) config('services.ampi.base_url'), '/').'/'.ltrim($url, '/');
         }
 
         if (! is_array($photo)) {

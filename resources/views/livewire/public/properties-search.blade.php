@@ -323,7 +323,7 @@
         </div>
 
         @if (! empty($items))
-            <div class="grid gap-6 md:grid-cols-2">
+            <div class="grid gap-6 md:grid-cols-3 lg:grid-cols-4">
                 @foreach ($items as $property)
                     @php
                         $image = $property['featured_image']

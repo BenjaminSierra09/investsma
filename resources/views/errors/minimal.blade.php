@@ -53,7 +53,7 @@
                 <div class="surface-panel p-3" data-spotlight>
                     <div class="relative overflow-hidden rounded-[24px] bg-zinc-950">
                         <img
-                            src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=85"
+                            src="{{ asset('images/san-miguel-de-allende-street-through-an-archway-2026-03-25-04-45-39-utc.jpg') }}"
                             alt="Casa tranquila al atardecer"
                             class="aspect-[4/5] h-full w-full object-cover opacity-85 sm:aspect-[5/4]"
                         >
