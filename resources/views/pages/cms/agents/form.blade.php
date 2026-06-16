@@ -1,10 +1,14 @@
 <?php
 
 use App\Models\Agent;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new class extends Component
 {
+    use WithFileUploads;
+
     public ?int $agentId = null;
 
     public ?Agent $editing = null;
@@ -20,6 +24,8 @@ new class extends Component
     public ?string $whatsapp = null;
 
     public ?string $photo_url = null;
+
+    public mixed $photoUpload = null;
 
     public ?string $bio = null;
 
@@ -57,10 +63,18 @@ new class extends Component
             'phone',
             'whatsapp',
             'photo_url',
+            'photoUpload',
             'bio',
         ]);
 
         $this->is_active = true;
+    }
+
+    public function updatedPhotoUpload(): void
+    {
+        $this->validate([
+            'photoUpload' => ['nullable', 'image', 'max:5120'],
+        ]);
     }
 
     public function save(): void
@@ -72,9 +86,18 @@ new class extends Component
             'phone' => ['nullable', 'string', 'max:50'],
             'whatsapp' => ['nullable', 'string', 'max:50'],
             'photo_url' => ['nullable', 'url', 'max:2048'],
+            'photoUpload' => ['nullable', 'image', 'max:5120'],
             'bio' => ['nullable', 'string', 'max:2500'],
             'is_active' => ['required', 'boolean'],
         ]);
+
+        if ($this->photoUpload) {
+            $validated['photo_url'] = asset(Storage::disk('public')->url(
+                $this->photoUpload->store('agents', 'public')
+            ));
+        }
+
+        unset($validated['photoUpload']);
 
         if ($this->editing) {
             $this->editing->update($validated);
@@ -83,6 +106,7 @@ new class extends Component
             $this->agentId = $this->editing->id;
         }
 
+        $this->photoUpload = null;
         $this->dispatch('notify', title: 'Agente guardado', body: 'Actualizamos el perfil con éxito.');
         $this->redirectRoute('cms.agents', navigate: true);
     }
@@ -117,6 +141,38 @@ new class extends Component
                 <flux:input wire:model.live="photo_url" label="Foto (URL)" placeholder="https://..." />
             </div>
 
+            <div class="mt-4 rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div class="text-sm font-semibold text-zinc-800 dark:text-zinc-50">Foto de perfil</div>
+                        <p class="mt-1 text-xs text-zinc-500">Sube una imagen JPG, PNG o WEBP. Máximo 5 MB.</p>
+                    </div>
+
+                    <label for="agent-photo-upload" class="inline-flex cursor-pointer items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
+                        Elegir foto
+                    </label>
+                </div>
+
+                <input
+                    id="agent-photo-upload"
+                    type="file"
+                    accept="image/*"
+                    wire:model="photoUpload"
+                    class="hidden"
+                >
+
+                @error('photoUpload')
+                    <p class="mt-3 text-xs text-rose-600">{{ $message }}</p>
+                @enderror
+
+                @if ($photoUpload && ! $errors->has('photoUpload'))
+                    <div class="mt-4 flex items-center gap-3">
+                        <img src="{{ $photoUpload->temporaryUrl() }}" alt="Vista previa" class="h-16 w-16 rounded-full object-cover ring-2 ring-amber-100">
+                        <div class="text-xs text-zinc-500">Esta foto reemplazará la URL actual al guardar.</div>
+                    </div>
+                @endif
+            </div>
+
             <div class="mt-4">
                 <flux:textarea wire:model.live="bio" label="Bio" rows="8" placeholder="Describe la experiencia, especialidad y enfoque comercial del agente." />
             </div>
@@ -131,7 +187,9 @@ new class extends Component
                 <div class="text-sm font-semibold text-zinc-800 dark:text-zinc-50">Vista previa</div>
 
                 <div class="mt-4 rounded-[28px] bg-zinc-900 p-6 text-white">
-                    @if ($photo_url)
+                    @if ($photoUpload && ! $errors->has('photoUpload'))
+                        <img src="{{ $photoUpload->temporaryUrl() }}" alt="{{ $name ?: 'Foto del agente' }}" class="h-20 w-20 rounded-full object-cover ring-4 ring-white/10">
+                    @elseif ($photo_url)
                         <img src="{{ $photo_url }}" alt="{{ $name ?: 'Foto del agente' }}" class="h-20 w-20 rounded-full object-cover ring-4 ring-white/10">
                     @else
                         <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-2xl font-semibold text-white/80">
