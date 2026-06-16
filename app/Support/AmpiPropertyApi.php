@@ -699,6 +699,10 @@ class AmpiPropertyApi
                 return $this->ampiMediaUrl('storage/'.$path);
             }
 
+            if (Str::startsWith($path, 'agents/')) {
+                return $this->ampiMediaUrl('storage/'.$path);
+            }
+
             if (! str_contains($path, '/') && preg_match('/\.(avif|gif|jpe?g|png|webp)$/i', $path)) {
                 return $this->ampiMediaUrl('storage/images/'.$path);
             }

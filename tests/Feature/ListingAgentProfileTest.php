@@ -76,7 +76,7 @@ it('shows invest sma ampi agents on AMPI MLS properties when they belong to offi
                 'id' => 32,
                 'name' => 'INVEST SMA',
             ],
-            'image' => '6576725a343c5_adelanew.jpg',
+            'image' => 'agents/NIpTESXVH2pipeFTQDkEUCyISnhwGChCSu0qVwcn.png',
         ]),
     ]);
 
@@ -89,5 +89,5 @@ it('shows invest sma ampi agents on AMPI MLS properties when they belong to offi
         ->assertSee('Laura Invest')
         ->assertSee('laura@investsma.com')
         ->assertSee('+52 415 111 2222')
-        ->assertSee('https://ampisanmigueldeallende.com/storage/images/6576725a343c5_adelanew.jpg', false);
+        ->assertSee('https://ampisanmigueldeallende.com/storage/agents/NIpTESXVH2pipeFTQDkEUCyISnhwGChCSu0qVwcn.png', false);
 });
