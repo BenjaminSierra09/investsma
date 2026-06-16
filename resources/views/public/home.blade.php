@@ -1,7 +1,9 @@
 @php
+    use App\Models\Listing;
     use Illuminate\Support\Str;
 
     $items = $properties['data'] ?? $properties ?? [];
+    $featuredListing = ($featuredListing ?? null) instanceof Listing ? $featuredListing : null;
     $fallback = [
         [
             'title' => 'Casa con patio en Guadiana',
@@ -26,16 +28,32 @@
         ],
     ];
 
-    $heroProperty = $items[0] ?? $fallback[0];
-    $heroImage = $heroProperty['featured_image'] ?? $heroProperty['image'] ?? $fallback[0]['image'];
-    $heroTitle = $heroProperty['name'] ?? $heroProperty['title'] ?? $fallback[0]['title'];
-    $heroLocation = collect([
-        $heroProperty['neighborhood'] ?? $fallback[0]['neighborhood'],
-        $heroProperty['city'] ?? $fallback[0]['city'],
-    ])->filter()->implode(', ');
-    $heroPrice = ! empty($heroProperty['price'])
-        ? sprintf('%s $%s', $heroProperty['currency'] ?? 'USD', number_format((float) $heroProperty['price'], 0))
-        : ($heroProperty['price'] ?? $fallback[0]['price']);
+    if ($featuredListing) {
+        $heroImage = $featuredListing->primaryImage() ?? $fallback[0]['image'];
+        $heroTitle = $featuredListing->title;
+        $heroLocation = $featuredListing->location ?? 'San Miguel de Allende';
+        $heroPrice = $featuredListing->price
+            ? sprintf('%s $%s', $featuredListing->currency, number_format((float) $featuredListing->price, 0))
+            : $featuredListing->listingTypeLabel();
+        $heroUrl = route('listings.show', $featuredListing);
+    } else {
+        $heroProperty = $items[0] ?? $fallback[0];
+        $heroImage = $heroProperty['featured_image'] ?? $heroProperty['image'] ?? $fallback[0]['image'];
+        $heroTitle = $heroProperty['name'] ?? $heroProperty['title'] ?? $fallback[0]['title'];
+        $heroLocation = collect([
+            $heroProperty['neighborhood'] ?? $fallback[0]['neighborhood'],
+            $heroProperty['city'] ?? $fallback[0]['city'],
+        ])->filter()->implode(', ');
+        $heroPrice = ! empty($heroProperty['price'])
+            ? sprintf('%s $%s', $heroProperty['currency'] ?? 'USD', number_format((float) $heroProperty['price'], 0))
+            : ($heroProperty['price'] ?? $fallback[0]['price']);
+        $heroUrl = ! empty($heroProperty['mls_id'] ?? $heroProperty['id'] ?? null)
+            ? route('properties.show', [
+                'mlsId' => $heroProperty['mls_id'] ?? $heroProperty['id'],
+                'slug' => Str::slug($heroTitle),
+            ])
+            : null;
+    }
 @endphp
 
 <x-layouts.public title="Bienes raíces en San Miguel de Allende | investsma">
@@ -57,24 +75,32 @@
 
             <div class="relative" data-reveal data-reveal-delay="70">
                 <div class="home-hero-media" data-spotlight>
-                    <img
-                        src="{{ $heroImage }}"
-                        alt="{{ $heroTitle }}"
-                        class="h-full w-full object-cover"
-                        loading="eager"
-                    >
-                    <div class="absolute inset-x-4 bottom-4 rounded-[22px] border border-white/20 bg-zinc-950/74 p-4 text-white backdrop-blur-xl sm:inset-x-5 sm:bottom-5">
-                        <p class="text-sm font-medium text-white/72">Selección destacada</p>
-                        <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <h2 class="line-clamp-2 text-xl font-semibold leading-tight">{{ $heroTitle }}</h2>
-                                <p class="mt-1 text-sm text-white/70">{{ $heroLocation }}</p>
-                            </div>
-                            <div class="whitespace-nowrap rounded-full bg-white/12 px-3 py-1.5 text-sm font-semibold text-amber-100">
-                                {{ $heroPrice }}
+                    @if ($heroUrl)
+                        <a href="{{ $heroUrl }}" class="group block h-full focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-300" aria-label="Ver detalles de {{ $heroTitle }}">
+                    @endif
+                        <img
+                            src="{{ $heroImage }}"
+                            alt="{{ $heroTitle }}"
+                            class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
+                            loading="eager"
+                        >
+                        <div class="absolute inset-x-4 bottom-4 rounded-[22px] border border-white/20 bg-zinc-950/74 p-4 text-white backdrop-blur-xl sm:inset-x-5 sm:bottom-5">
+                            <p class="text-sm font-medium text-white/72">Selección destacada</p>
+                            <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <h2 class="line-clamp-2 text-xl font-semibold leading-tight transition group-hover:text-amber-100">
+                                        {{ $heroTitle }}
+                                    </h2>
+                                    <p class="mt-1 text-sm text-white/70">{{ $heroLocation }}</p>
+                                </div>
+                                <div class="whitespace-nowrap rounded-full bg-white/12 px-3 py-1.5 text-sm font-semibold text-amber-100">
+                                    {{ $heroPrice }}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @if ($heroUrl)
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

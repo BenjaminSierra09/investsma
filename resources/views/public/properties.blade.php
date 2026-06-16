@@ -4,6 +4,7 @@
 @php
     $latitude = $property['latitude'] ?? $property['lat'] ?? null;
     $longitude = $property['longitude'] ?? $property['lng'] ?? null;
+    $investSmaAgents = collect($property['invest_sma_agents'] ?? [])->filter(fn ($agent) => is_array($agent));
 @endphp
 
 <script>
@@ -281,6 +282,61 @@
 
             <!-- Sidebar -->
             <div class="lg:col-span-1">
+                @if ($investSmaAgents->isNotEmpty())
+                    <div class="mb-6 space-y-4">
+                        @foreach ($investSmaAgents as $agent)
+                            @php
+                                $phone = $agent['phone'] ?? null;
+                                $phoneLink = $phone ? preg_replace('/[^0-9+]/', '', $phone) : null;
+                                $email = $agent['email'] ?? null;
+                                $initials = str($agent['name'] ?? '')
+                                    ->trim()
+                                    ->explode(' ')
+                                    ->filter()
+                                    ->take(2)
+                                    ->map(fn ($part) => str($part)->substr(0, 1))
+                                    ->join('');
+                            @endphp
+
+                            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-lg">
+                                <div class="text-sm font-semibold uppercase tracking-[0.14em] text-orange-600">Agente INVEST SMA</div>
+
+                                <div class="mt-4 flex items-center gap-4">
+                                    @if (! empty($agent['photo']))
+                                        <img src="{{ $agent['photo'] }}" alt="{{ $agent['name'] }}" class="h-20 w-20 rounded-full object-cover ring-2 ring-orange-100">
+                                    @else
+                                        <div class="flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-xl font-semibold text-orange-700 ring-2 ring-orange-100">
+                                            {{ $initials ?: 'IS' }}
+                                        </div>
+                                    @endif
+
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-900">{{ $agent['name'] }}</h3>
+                                        @if (! empty($agent['office_name']))
+                                            <p class="mt-1 text-sm text-gray-500">{{ $agent['office_name'] }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if (! empty($agent['bio']))
+                                    <p class="mt-4 text-sm leading-relaxed text-gray-600">{{ strip_tags($agent['bio']) }}</p>
+                                @endif
+
+                                @if ($phone || $email)
+                                    <div class="mt-5 space-y-2 text-sm text-gray-600">
+                                        @if ($phone)
+                                            <div>Tel: <a href="tel:{{ $phoneLink }}" class="font-medium text-orange-700">{{ $phone }}</a></div>
+                                        @endif
+                                        @if ($email)
+                                            <div>Email: <a href="mailto:{{ $email }}" class="font-medium text-orange-700">{{ $email }}</a></div>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 <!-- Contact Card -->
                 <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-lg sticky top-4">
                     <h3 class="text-xl font-bold text-gray-900 mb-4">{{ __('Interested in this property?') }}</h3>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ContactMessage;
+use App\Models\Listing;
 use App\Models\Page;
 use App\Support\AmpiPropertyApi;
 use App\Support\EditorJsRenderer;
@@ -45,6 +46,7 @@ class PageController extends Controller
         );
 
         return view('public.home', [
+            'featuredListing' => $this->fetchFeaturedListing(),
             'properties' => $this->fetchOfficeProperties($filters),
             'neighborhoods' => $this->fetchNeighborhoods($request),
         ]);
@@ -200,6 +202,16 @@ class PageController extends Controller
         Log::error('Failed to fetch office properties', ['params' => $params]);
 
         return [];
+    }
+
+    private function fetchFeaturedListing(): ?Listing
+    {
+        return Listing::query()
+            ->published()
+            ->where('featured', true)
+            ->latest('published_at')
+            ->latest('id')
+            ->first();
     }
 
     private function fetchNeighborhoods(Request $request): array

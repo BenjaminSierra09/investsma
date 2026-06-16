@@ -15,6 +15,8 @@ use Throwable;
 
 class AmpiPropertyApi
 {
+    private const int INVEST_SMA_OFFICE_ID = 32;
+
     /**
      * Fetch property search results from the AMPI API.
      */
@@ -45,7 +47,23 @@ class AmpiPropertyApi
         $property = $this->findLocalProperty($mlsId);
 
         if ($property instanceof AmpiProperty) {
-            return $property->toAmpiArray();
+            $localProperty = $this->normalizePropertyAgents($property->toAmpiArray(), $property);
+
+            if (($this->propertyHasPhotos($localProperty) && $this->propertyHasInvestSmaAgents($localProperty)) || ! $this->isConfigured()) {
+                return $localProperty;
+            }
+
+            $remoteProperty = $this->fetchPropertyRemote($mlsId);
+
+            if (! is_array($remoteProperty)) {
+                return $localProperty;
+            }
+
+            $this->updateLocalPropertyMedia($property, $remoteProperty);
+
+            return $this->normalizePropertyAgents(array_merge($localProperty, $remoteProperty, [
+                'mls_id' => $localProperty['mls_id'] ?? $remoteProperty['mls_id'] ?? $mlsId,
+            ]), $property);
         }
 
         return $this->fetchPropertyRemote($mlsId);
@@ -56,7 +74,11 @@ class AmpiPropertyApi
         return $this->rememberSuccessful(
             $this->cacheKey('property-detail', ['mls_id' => $mlsId]),
             now()->addMinutes($this->propertyCacheTtlMinutes()),
-            fn (): ?array => $this->fetchJson("/api/v1/property/mls/{$mlsId}"),
+            fn (): ?array => $this->normalizePropertyPhotos(
+                $this->normalizePropertyAgents(
+                    $this->fetchJson('/api/v1/property/mls/'.$this->remoteMlsId($mlsId))
+                )
+            ),
         );
     }
 
@@ -444,8 +466,229 @@ class AmpiPropertyApi
 
         return AmpiProperty::query()
             ->active()
-            ->where('mls_id', $mlsId)
+            ->whereIn('mls_id', $this->mlsIdCandidates($mlsId))
             ->first();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function mlsIdCandidates(string $mlsId): array
+    {
+        $trimmed = trim($mlsId);
+        $numeric = preg_replace('/^SMA-/i', '', $trimmed);
+
+        return collect([
+            $trimmed,
+            $numeric,
+            $numeric ? 'SMA-'.$numeric : null,
+        ])
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function remoteMlsId(string $mlsId): string
+    {
+        return preg_replace('/^SMA-/i', '', trim($mlsId)) ?: trim($mlsId);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $property
+     * @return array<string, mixed>|null
+     */
+    private function normalizePropertyPhotos(?array $property): ?array
+    {
+        if (! is_array($property)) {
+            return null;
+        }
+
+        $photos = collect($property['photos'] ?? $property['images'] ?? $property['gallery'] ?? [])
+            ->map(fn (mixed $photo): ?string => $this->photoUrl($photo))
+            ->filter()
+            ->values();
+
+        $featuredImage = $this->photoUrl($property['featured_image'] ?? null);
+
+        if ($featuredImage !== null) {
+            $photos = $photos->prepend($featuredImage);
+        }
+
+        $photos = $photos->unique()->values()->all();
+
+        $property['photos'] = $photos;
+        $property['featured_image'] = $featuredImage ?? ($photos[0] ?? null);
+
+        return $property;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $property
+     * @return array<string, mixed>|null
+     */
+    private function normalizePropertyAgents(?array $property, ?AmpiProperty $localProperty = null): ?array
+    {
+        if (! is_array($property)) {
+            return null;
+        }
+
+        $agents = $this->resolvePropertyAgents($property, $localProperty)
+            ->map(fn (mixed $agent): ?array => $this->normalizeAgent($agent))
+            ->filter()
+            ->filter(fn (array $agent): bool => (int) ($agent['office_id'] ?? 0) === self::INVEST_SMA_OFFICE_ID)
+            ->unique(fn (array $agent): string => (string) ($agent['id'] ?? $agent['email'] ?? $agent['name']))
+            ->values()
+            ->all();
+
+        $property['invest_sma_agents'] = $agents;
+
+        return $property;
+    }
+
+    /**
+     * @param  array<string, mixed>  $property
+     * @return \Illuminate\Support\Collection<int, mixed>
+     */
+    private function resolvePropertyAgents(array $property, ?AmpiProperty $localProperty = null): \Illuminate\Support\Collection
+    {
+        $agents = collect($property['agents'] ?? $property['agent_ids'] ?? []);
+
+        if ($agents->isEmpty()) {
+            $internalId = $property['id'] ?? $localProperty?->external_id;
+
+            if ($this->isConfigured() && is_numeric($internalId)) {
+                $response = $this->rememberSuccessful(
+                    $this->cacheKey('property-agents', ['id' => (int) $internalId]),
+                    now()->addMinutes($this->propertyCacheTtlMinutes()),
+                    fn (): ?array => $this->fetchJson('/api/v1/property/'.((int) $internalId).'/agents'),
+                );
+
+                $agents = collect($response['agents'] ?? []);
+            }
+        }
+
+        return $agents->map(function (mixed $agent): mixed {
+            if (is_array($agent) && ! array_is_list($agent)) {
+                return $agent;
+            }
+
+            if (is_array($agent)) {
+                $agent = $agent['id'] ?? $agent['agent_id'] ?? $agent['mls_agent_id'] ?? null;
+            }
+
+            if (! is_numeric($agent) || ! $this->isConfigured()) {
+                return $agent;
+            }
+
+            return $this->fetchAgent((int) $agent) ?? $agent;
+        });
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function fetchAgent(int $agentId): ?array
+    {
+        $payload = $this->rememberSuccessful(
+            $this->cacheKey('agent-detail', ['id' => $agentId]),
+            now()->addHours(6),
+            fn (): ?array => $this->fetchJson('/api/v1/agent/'.$agentId),
+        );
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        return $payload['data'] ?? $payload['agent'] ?? $payload;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function normalizeAgent(mixed $agent): ?array
+    {
+        if (! is_array($agent)) {
+            return null;
+        }
+
+        $firstName = $agent['first_name'] ?? null;
+        $lastName = $agent['last_name'] ?? null;
+        $name = $agent['name']
+            ?? $agent['full_name']
+            ?? trim(collect([$firstName, $lastName])->filter()->join(' '));
+
+        if (! is_string($name) || trim($name) === '') {
+            return null;
+        }
+
+        return [
+            'id' => $agent['id'] ?? $agent['agent_id'] ?? $agent['mls_agent_id'] ?? null,
+            'name' => trim($name),
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $agent['email'] ?? null,
+            'phone' => $agent['mobile'] ?? $agent['cell_phone'] ?? $agent['phone'] ?? $agent['phone_number'] ?? null,
+            'office_id' => $agent['office_id'] ?? $agent['mls_office_id'] ?? null,
+            'office_name' => $agent['office_name'] ?? $agent['office'] ?? null,
+            'photo' => $this->photoUrl($agent['photo'] ?? $agent['photo_url'] ?? $agent['image'] ?? $agent['agent_photo'] ?? $agent['avatar'] ?? null),
+            'bio' => $agent['bio'] ?? $agent['biography'] ?? $agent['description'] ?? null,
+        ];
+    }
+
+    private function photoUrl(mixed $photo): ?string
+    {
+        if (is_string($photo)) {
+            $url = trim($photo);
+
+            return $url !== '' ? $url : null;
+        }
+
+        if (! is_array($photo)) {
+            return null;
+        }
+
+        foreach (['url', 'image', 'src', 'image_url', 'large_url', 'full_url', 'original_url', 'file_url'] as $key) {
+            if (isset($photo[$key]) && is_string($photo[$key]) && trim($photo[$key]) !== '') {
+                return trim($photo[$key]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $property
+     */
+    private function propertyHasPhotos(array $property): bool
+    {
+        return collect($property['photos'] ?? [])
+            ->contains(fn (mixed $photo): bool => $this->photoUrl($photo) !== null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $property
+     */
+    private function propertyHasInvestSmaAgents(array $property): bool
+    {
+        return ! empty($property['invest_sma_agents'] ?? []);
+    }
+
+    /**
+     * @param  array<string, mixed>  $remoteProperty
+     */
+    private function updateLocalPropertyMedia(AmpiProperty $property, array $remoteProperty): void
+    {
+        if (! $this->propertyHasPhotos($remoteProperty)) {
+            return;
+        }
+
+        $property->update([
+            'photos' => $remoteProperty['photos'],
+            'featured_image' => $remoteProperty['featured_image'] ?? $remoteProperty['photos'][0] ?? null,
+            'raw_payload' => array_merge($property->raw_payload ?? [], $remoteProperty),
+            'last_synced_at' => now(),
+        ]);
     }
 
     private function whereLike(Builder $query, string $column, mixed $value, array $extraColumns = []): void

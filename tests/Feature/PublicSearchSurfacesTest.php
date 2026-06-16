@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Listing;
 use App\Support\AmpiPropertyApi;
 use Mockery\MockInterface;
 
@@ -45,6 +46,30 @@ it('shows a compact property filter bar on the home page', function () {
         ->assertSee('name="category"', false)
         ->assertSee('name="price_max"', false)
         ->assertSee('quick-filter-chip', false);
+});
+
+it('uses the published dashboard featured listing as the home hero property', function () {
+    $listing = Listing::factory()
+        ->featured()
+        ->create([
+            'title' => 'Casa Destacada del Dashboard',
+            'slug' => 'casa-destacada-dashboard',
+            'location' => 'Guadiana, San Miguel de Allende',
+            'cover_image' => 'https://example.test/dashboard-featured.jpg',
+            'price' => 985000,
+            'currency' => 'USD',
+            'published_at' => now(),
+        ]);
+
+    $response = $this->get(route('home'));
+
+    $response
+        ->assertOk()
+        ->assertSee('Casa Destacada del Dashboard')
+        ->assertSee('Guadiana, San Miguel de Allende')
+        ->assertSee('https://example.test/dashboard-featured.jpg', false)
+        ->assertSee(route('listings.show', $listing), false)
+        ->assertSee('aria-label="Ver detalles de Casa Destacada del Dashboard"', false);
 });
 
 it('renders compact primary filters and a secondary drawer on the properties page', function () {

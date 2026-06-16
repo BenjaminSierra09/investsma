@@ -132,3 +132,56 @@ test('livewire properties search uses the local database without requiring ampi 
         ->assertSeeInOrder(['Casa Local MXN', 'Casa Local USD'])
         ->assertDontSee('Falta configurar la API key de AMPI.');
 });
+
+test('property detail hydrates missing local photos from the ampi detail endpoint', function () {
+    config()->set('services.ampi.api_key', 'test-api-key');
+    config()->set('cache.default', 'array');
+
+    AmpiProperty::factory()->create([
+        'mls_id' => 'SMA-11344',
+        'name' => '1000m2 Lot Offering Great Mountain And Valley Views',
+        'slug' => '1000m2-lot-offering-great-mountain-and-valley-views',
+        'category' => 'Land and Lots',
+        'neighborhood' => 'Atascadero',
+        'city' => 'San Miguel de Allende',
+        'price' => 150000,
+        'currency' => 'USD',
+        'photos' => [],
+        'featured_image' => null,
+        'raw_payload' => [
+            'mls_id' => 'SMA-11344',
+            'name' => '1000m2 Lot Offering Great Mountain And Valley Views',
+        ],
+    ]);
+
+    Http::fake([
+        'https://ampisanmigueldeallende.com/api/v1/property/mls/11344' => Http::response([
+            'mls_id' => 'SMA-11344',
+            'name' => '1000m2 Lot Offering Great Mountain And Valley Views',
+            'description_short_en' => 'A lot with mountain and valley views.',
+            'category' => 'Land and Lots',
+            'neighborhood' => 'Atascadero',
+            'city' => 'San Miguel de Allende',
+            'price' => 150000,
+            'currency' => 'USD',
+            'photos' => [
+                ['url' => 'https://example.com/detail-1.jpg'],
+                'https://example.com/detail-2.jpg',
+            ],
+        ], 200),
+    ]);
+
+    $this->get(route('properties.show', [
+        'mlsId' => '11344',
+        'slug' => '1000m2-lot-offering-great-mountain-and-valley-views',
+    ]))
+        ->assertOk()
+        ->assertSee('https://example.com/detail-1.jpg', false)
+        ->assertSee('https://example.com/detail-2.jpg', false);
+
+    expect(AmpiProperty::query()->where('mls_id', 'SMA-11344')->first()?->photos)
+        ->toBe([
+            'https://example.com/detail-1.jpg',
+            'https://example.com/detail-2.jpg',
+        ]);
+});

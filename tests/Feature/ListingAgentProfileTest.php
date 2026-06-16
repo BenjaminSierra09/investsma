@@ -48,3 +48,44 @@ it('does not show an agent profile on AMPI MLS properties', function () {
         ->assertDontSee('Asesor asignado')
         ->assertDontSee('María González');
 });
+
+it('shows invest sma ampi agents on AMPI MLS properties when they belong to office 32', function () {
+    config()->set('services.ampi.api_key', 'test-api-key');
+    config()->set('cache.default', 'array');
+
+    Http::fake([
+        'https://ampisanmigueldeallende.com/api/v1/property/mls/11344' => Http::response([
+            'id' => 11344,
+            'mls_id' => 'SMA-11344',
+            'name' => 'Casa AMPI Invest',
+            'description_short_en' => 'MLS home with Invest SMA agent.',
+            'category' => 'Casa',
+            'neighborhood' => 'Centro',
+            'city' => 'San Miguel de Allende',
+            'price' => 550000,
+            'currency' => 'USD',
+            'photos' => ['https://example.com/ampi-invest.jpg'],
+            'agents' => [501],
+        ]),
+        'https://ampisanmigueldeallende.com/api/v1/agent/501' => Http::response([
+            'id' => 501,
+            'name' => 'Laura Invest',
+            'email' => 'laura@investsma.com',
+            'mobile' => '+52 415 111 2222',
+            'office_id' => 32,
+            'office_name' => 'INVEST SMA',
+            'photo_url' => 'https://example.com/laura.jpg',
+        ]),
+    ]);
+
+    $this->get(route('properties.show', [
+        'mlsId' => '11344',
+        'slug' => 'casa-ampi-invest',
+    ]))
+        ->assertOk()
+        ->assertSee('Agente INVEST SMA')
+        ->assertSee('Laura Invest')
+        ->assertSee('laura@investsma.com')
+        ->assertSee('+52 415 111 2222')
+        ->assertSee('https://example.com/laura.jpg', false);
+});

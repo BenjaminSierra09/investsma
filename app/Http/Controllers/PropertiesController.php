@@ -244,16 +244,17 @@ class PropertiesController extends Controller
             $locale = app()->getLocale();
             $description = $locale === 'es' && ! empty($property['description_short_es'])
                 ? $property['description_short_es']
-                : $property['description_short_en'];
+                : ($property['description_short_en'] ?? $property['description_full_en'] ?? $property['description_full_es'] ?? '');
 
             $description = Str::limit(strip_tags($description), 160, '...');
             $title = $property['name'];
+            $photos = array_values(array_filter((array) ($property['photos'] ?? [])));
 
             SeoData::apply(
                 title: $title.' | investsma',
                 description: $description,
                 keywords: [$title, $property['category'] ?? null, $property['neighborhood'] ?? null, $property['city'] ?? null, 'San Miguel de Allende', 'real estate', 'property'],
-                image: $property['photos'][0] ?? asset('logotipo.png'),
+                image: $photos[0] ?? asset('logotipo.png'),
                 type: 'article',
                 schemaType: 'Product',
             );
