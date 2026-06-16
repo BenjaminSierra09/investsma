@@ -739,6 +739,15 @@ const initializeRevealAnimations = (root = document) => {
             element.style.transitionDelay = `${element.dataset.revealDelay}ms`;
         }
 
+        const bounds = element.getBoundingClientRect();
+        const isInitiallyVisible =
+            bounds.top < window.innerHeight * 0.92 && bounds.bottom > 0;
+
+        if (isInitiallyVisible) {
+            element.classList.add("is-visible");
+            return;
+        }
+
         revealObserver.observe(element);
     });
 };

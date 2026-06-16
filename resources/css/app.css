@@ -284,7 +284,7 @@
         z-index: 1;
     }
 
-    .js [data-reveal] {
+    .js [data-reveal][data-reveal-ready] {
         opacity: 0;
         transform: translateY(18px) scale(0.985);
         filter: blur(6px);
@@ -422,7 +422,7 @@ select:focus[data-flux-control] {
         scroll-behavior: auto;
     }
 
-    .js [data-reveal] {
+    .js [data-reveal][data-reveal-ready] {
         opacity: 1;
         transform: none;
         filter: none;

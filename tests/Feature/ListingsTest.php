@@ -91,7 +91,7 @@ it('shows a published listing and sends inquiry emails', function () {
         ->assertRedirect()
         ->assertSessionHas('listing_inquiry_status');
 
-    Mail::assertSent(ListingInquiryMail::class, function (ListingInquiryMail $mail) use ($listing) {
+    Mail::assertQueued(ListingInquiryMail::class, function (ListingInquiryMail $mail) use ($listing) {
         return $mail->listing->is($listing)
             && $mail->data['email'] === 'maria@example.com';
     });

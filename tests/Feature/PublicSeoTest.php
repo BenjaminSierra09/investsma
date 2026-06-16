@@ -81,7 +81,7 @@ it('submits contact inquiries through the public form', function () {
         ->assertRedirect()
         ->assertSessionHas('status', 'Gracias, recibimos tu mensaje. Te contactamos en breve.');
 
-    Mail::assertSent(ContactMessage::class, function (ContactMessage $mail): bool {
+    Mail::assertQueued(ContactMessage::class, function (ContactMessage $mail): bool {
         return $mail->hasTo('info@investsma.com')
             && $mail->data['email'] === 'maria@example.com'
             && $mail->data['nombre'] === 'María López';
