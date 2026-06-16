@@ -2,10 +2,14 @@
 
 namespace App\Support;
 
+use App\Models\AmpiProperty;
+use App\Models\Currency;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -16,6 +20,17 @@ class AmpiPropertyApi
      */
     public function search(array $params = []): ?array
     {
+        $localResults = $this->searchLocal($params);
+
+        if (is_array($localResults)) {
+            return $localResults;
+        }
+
+        return $this->searchRemote($params);
+    }
+
+    public function searchRemote(array $params = []): ?array
+    {
         return $this->rememberSuccessful(
             $this->cacheKey('property-search', $params),
             now()->addMinutes($this->searchCacheTtlMinutes()),
@@ -24,6 +39,17 @@ class AmpiPropertyApi
     }
 
     public function fetchProperty(string $mlsId): ?array
+    {
+        $property = $this->findLocalProperty($mlsId);
+
+        if ($property instanceof AmpiProperty) {
+            return $property->toAmpiArray();
+        }
+
+        return $this->fetchPropertyRemote($mlsId);
+    }
+
+    public function fetchPropertyRemote(string $mlsId): ?array
     {
         return $this->rememberSuccessful(
             $this->cacheKey('property-detail', ['mls_id' => $mlsId]),
@@ -34,6 +60,12 @@ class AmpiPropertyApi
 
     public function fetchNeighborhoodOptions(array $filters = []): array
     {
+        $localNeighborhoods = $this->fetchLocalNeighborhoodOptions($filters);
+
+        if ($localNeighborhoods !== []) {
+            return $localNeighborhoods;
+        }
+
         if (! $this->isConfigured()) {
             return [];
         }
@@ -60,6 +92,15 @@ class AmpiPropertyApi
     public function isConfigured(): bool
     {
         return filled(config('services.ampi.api_key'));
+    }
+
+    public function hasLocalProperties(): bool
+    {
+        if (! $this->localStoreIsReady()) {
+            return false;
+        }
+
+        return AmpiProperty::query()->active()->exists();
     }
 
     public function url(string $path): string
@@ -266,5 +307,200 @@ class AmpiPropertyApi
     private function retrySleepMilliseconds(): int
     {
         return max(0, (int) config('services.ampi.http.retry_sleep_milliseconds', 200));
+    }
+
+    private function searchLocal(array $params = []): ?array
+    {
+        if (! $this->hasLocalProperties()) {
+            return null;
+        }
+
+        $perPage = max(1, min(100, (int) ($params['per_page'] ?? 25)));
+        $currentPage = max(1, (int) ($params['page'] ?? 1));
+        $query = AmpiProperty::query()->active();
+
+        $this->applyLocalFilters($query, $params);
+        $this->applyLocalSort($query, (string) ($params['sort'] ?? 'price_desc'));
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $currentPage);
+        $items = $paginator->getCollection()
+            ->map(fn (AmpiProperty $property): array => $property->toAmpiArray())
+            ->values()
+            ->all();
+
+        return [
+            'data' => $items,
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'from' => $paginator->firstItem(),
+            'to' => $paginator->lastItem(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    private function applyLocalFilters(Builder $query, array $params): void
+    {
+        $this->whereLike($query, 'name', $params['keywords'] ?? null, ['city', 'neighborhood', 'category']);
+        $this->whereEquals($query, 'office_id', $params['office_id'] ?? null);
+        $this->whereEquals($query, 'category', $params['category'] ?? null);
+        $this->whereEquals($query, 'status', $params['status'] ?? null);
+        $this->whereEquals($query, 'parking_type', $params['parking_type'] ?? null);
+        $this->whereEquals($query, 'furnished', $params['furnished'] ?? null);
+        $this->whereMinimum($query, 'bedrooms', $params['bedrooms'] ?? null);
+        $this->whereMinimum($query, 'bathrooms', $params['bathrooms'] ?? null);
+        $this->whereMinimum($query, 'floors', $params['floors'] ?? null);
+        $this->whereMinimum($query, 'construction_meters', $params['construction_meters_min'] ?? null);
+        $this->whereMaximum($query, 'construction_meters', $params['construction_meters_max'] ?? null);
+        $this->whereMinimum($query, 'lot_meters', $params['lot_meters_min'] ?? null);
+        $this->whereMaximum($query, 'lot_meters', $params['lot_meters_max'] ?? null);
+        $this->whereBoolean($query, 'with_yard', $params['with_yard'] ?? null);
+        $this->whereBoolean($query, 'pool', $params['pool'] ?? null);
+        $this->whereBoolean($query, 'casita', $params['casita'] ?? null);
+        $this->whereBoolean($query, 'gated_comm', $params['gated_comm'] ?? null);
+
+        $neighborhoods = array_values(array_filter((array) ($params['neighborhood'] ?? [])));
+        if ($neighborhoods !== []) {
+            $query->whereIn('neighborhood', $neighborhoods);
+        }
+
+        $priceCurrency = $params['currency'] ?? 'USD';
+        $rate = Currency::rateFor(is_string($priceCurrency) ? $priceCurrency : 'USD');
+
+        if (is_numeric($params['price_min'] ?? null)) {
+            $query->where('normalized_price', '>=', (float) $params['price_min'] * $rate);
+        }
+
+        if (is_numeric($params['price_max'] ?? null)) {
+            $query->where('normalized_price', '<=', (float) $params['price_max'] * $rate);
+        }
+    }
+
+    private function applyLocalSort(Builder $query, string $sort): void
+    {
+        match ($sort) {
+            'price_asc' => $query
+                ->orderByRaw('normalized_price IS NULL')
+                ->orderBy('normalized_price')
+                ->orderByDesc('api_updated_at')
+                ->orderByDesc('id'),
+            'newest' => $query
+                ->orderByDesc('api_updated_at')
+                ->orderByDesc('id'),
+            default => $query
+                ->orderByRaw('normalized_price IS NULL')
+                ->orderByDesc('normalized_price')
+                ->orderByDesc('api_updated_at')
+                ->orderByDesc('id'),
+        };
+    }
+
+    private function fetchLocalNeighborhoodOptions(array $filters = []): array
+    {
+        if (! $this->hasLocalProperties()) {
+            return [];
+        }
+
+        $query = AmpiProperty::query()->active();
+        $this->whereEquals($query, 'office_id', $filters['office_id'] ?? null);
+
+        return $query
+            ->whereNotNull('neighborhood')
+            ->distinct()
+            ->orderBy('neighborhood')
+            ->pluck('neighborhood')
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function findLocalProperty(string $mlsId): ?AmpiProperty
+    {
+        if (! $this->hasLocalProperties()) {
+            return null;
+        }
+
+        return AmpiProperty::query()
+            ->active()
+            ->where('mls_id', $mlsId)
+            ->first();
+    }
+
+    private function whereLike(Builder $query, string $column, mixed $value, array $extraColumns = []): void
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return;
+        }
+
+        $term = '%'.trim($value).'%';
+        $query->where(function (Builder $query) use ($column, $extraColumns, $term): void {
+            $query->where($column, 'like', $term);
+
+            foreach ($extraColumns as $extraColumn) {
+                $query->orWhere($extraColumn, 'like', $term);
+            }
+        });
+    }
+
+    private function whereEquals(Builder $query, string $column, mixed $value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $query->where($column, $value);
+    }
+
+    private function whereMinimum(Builder $query, string $column, mixed $value): void
+    {
+        if (is_numeric($value)) {
+            $query->where($column, '>=', $value);
+        }
+    }
+
+    private function whereMaximum(Builder $query, string $column, mixed $value): void
+    {
+        if (is_numeric($value)) {
+            $query->where($column, '<=', $value);
+        }
+    }
+
+    private function whereBoolean(Builder $query, string $column, mixed $value): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $normalized = Str::lower((string) $value);
+
+        if (in_array($normalized, ['yes', '1', 'true', 'si', 'sí'], true)) {
+            $query->where($column, true);
+
+            return;
+        }
+
+        if (in_array($normalized, ['no', '0', 'false'], true)) {
+            $query->where($column, false);
+        }
+    }
+
+    private function localStoreIsReady(): bool
+    {
+        try {
+            return Schema::hasTable('ampi_properties');
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

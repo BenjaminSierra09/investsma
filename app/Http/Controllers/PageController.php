@@ -32,6 +32,7 @@ class PageController extends Controller
             'price_max',
             'bedrooms',
             'bathrooms',
+            'sort',
             'page',
             'per_page',
         ]);
@@ -152,7 +153,7 @@ class PageController extends Controller
 
     private function fetchOfficeProperties(array $filters = []): array
     {
-        if (! $this->ampiPropertyApi->isConfigured()) {
+        if (! $this->ampiPropertyApi->isConfigured() && ! $this->ampiPropertyApi->hasLocalProperties()) {
             return [];
         }
 
@@ -177,6 +178,7 @@ class PageController extends Controller
             'pool',
             'casita',
             'gated_comm',
+            'sort',
             'page',
             'per_page',
         ];

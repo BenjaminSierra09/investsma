@@ -41,6 +41,7 @@ class PropertiesSearch extends Component
         'pool' => ['except' => null],
         'casita' => ['except' => null],
         'gated_comm' => ['except' => null],
+        'sort' => ['except' => 'price_desc'],
         'page' => ['except' => 1],
         'perPage' => ['except' => 25],
     ];
@@ -86,6 +87,8 @@ class PropertiesSearch extends Component
     public ?string $casita = null;
 
     public ?string $gated_comm = null;
+
+    public string $sort = 'price_desc';
 
     public int $page = 1;
 
@@ -144,7 +147,7 @@ class PropertiesSearch extends Component
         $this->errorMessage = null;
         $params = $this->buildQueryParams();
 
-        if (! $this->ampiPropertyApi->isConfigured()) {
+        if (! $this->ampiPropertyApi->isConfigured() && ! $this->ampiPropertyApi->hasLocalProperties()) {
             $this->errorMessage = 'Falta configurar la API key de AMPI.';
             $this->results = [];
 
@@ -188,6 +191,7 @@ class PropertiesSearch extends Component
             'pool',
             'casita',
             'gated_comm',
+            'sort',
             'page',
         ]);
 
@@ -237,6 +241,7 @@ class PropertiesSearch extends Component
             'pool',
             'casita',
             'gated_comm',
+            'sort',
         ];
 
         foreach ($singleFields as $field) {
@@ -248,6 +253,7 @@ class PropertiesSearch extends Component
 
         $params['page'] = $this->page;
         $params['per_page'] = $this->perPage;
+        $params['sort'] = $this->sort;
 
         return $params;
     }
@@ -274,6 +280,7 @@ class PropertiesSearch extends Component
         $this->pool = $this->normalizeYesNoValue($params['pool'] ?? $this->pool);
         $this->casita = $this->normalizeYesNoValue($params['casita'] ?? $this->casita);
         $this->gated_comm = $params['gated_comm'] ?? $this->gated_comm;
+        $this->sort = $params['sort'] ?? $this->sort;
 
         if (isset($params['page'])) {
             $this->page = (int) $params['page'];
@@ -328,6 +335,7 @@ class PropertiesSearch extends Component
             'category' => $this->category,
             'status' => $this->status,
             'currency' => $this->currency,
+            'sort' => $this->sort,
             'pool' => $this->pool,
             'casita' => $this->casita,
         ];

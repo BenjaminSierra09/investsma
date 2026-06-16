@@ -49,6 +49,11 @@ return [
             'search_ttl_minutes' => env('AMPI_SEARCH_CACHE_TTL_MINUTES', 5),
             'property_ttl_minutes' => env('AMPI_PROPERTY_CACHE_TTL_MINUTES', 15),
         ],
+        'sync' => [
+            'per_page' => env('AMPI_SYNC_PER_PAGE', 100),
+            'max_pages' => env('AMPI_SYNC_MAX_PAGES', 25),
+            'office_id' => env('AMPI_SYNC_OFFICE_ID'),
+        ],
     ],
 
 ];

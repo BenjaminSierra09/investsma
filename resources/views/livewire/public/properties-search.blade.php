@@ -44,6 +44,7 @@
                     'pool' => $pool,
                     'casita' => $casita,
                     'gated_comm' => $gated_comm,
+                    'sort' => $sort,
                     'per_page' => $perPage,
                 ], fn ($value) => filled($value))) }}"
                 class="button-secondary"
@@ -145,7 +146,7 @@
             </div>
         </div>
 
-        <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-7">
             <div>
                 <label class="field-label">Precio mínimo</label>
                 <input wire:model.defer="price_min" type="number" min="0" class="{{ $inputClass }}" placeholder="100000">
@@ -190,6 +191,15 @@
                     @foreach ([12, 24, 36] as $count)
                         <option value="{{ $count }}">{{ $count }}</option>
                     @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="field-label">Orden</label>
+                <select wire:model.defer="sort" class="{{ $inputClass }}">
+                    <option value="price_desc">Mayor precio</option>
+                    <option value="price_asc">Menor precio</option>
+                    <option value="newest">Más recientes</option>
                 </select>
             </div>
         </div>

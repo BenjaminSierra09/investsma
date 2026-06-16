@@ -84,7 +84,7 @@
 
                     <nav class="hidden items-center gap-1 rounded-full border border-white/80 bg-white/78 px-3 py-2 text-sm font-medium text-zinc-700 shadow-[0_16px_40px_-34px_rgba(33,24,17,0.35)] lg:flex">
                         @foreach ($items as $item)
-                            <div class="group relative">
+                            <div class="group relative" data-desktop-menu-item>
                                 <a
                                     href="{{ $item->url }}"
                                     class="pressable inline-flex items-center rounded-full px-3 py-2 transition-colors duration-150 hover:text-amber-700"
@@ -93,12 +93,14 @@
                                 </a>
 
                                 @if ($item->children->isNotEmpty())
-                                    <div class="pointer-events-none absolute left-0 mt-2 min-w-[220px] origin-top-left scale-95 rounded-[22px] border border-white/90 bg-white/98 opacity-0 shadow-xl ring-1 ring-black/5 transition-[transform,opacity] duration-180 [transition-timing-function:var(--ease-out-strong)] group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
-                                        <div class="space-y-1 p-2">
-                                            @include('partials.navigation.desktop-branch', [
-                                                'items' => $item->children,
-                                                'level' => 0,
-                                            ])
+                                    <div class="pointer-events-none absolute left-0 top-full z-40 min-w-[220px] pt-2 opacity-0 transition-opacity duration-180 [transition-timing-function:var(--ease-out-strong)] group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100" data-hover-bridge>
+                                        <div class="origin-top-left scale-95 rounded-[22px] border border-white/90 bg-white/98 shadow-xl ring-1 ring-black/5 transition-transform duration-180 [transition-timing-function:var(--ease-out-strong)] group-hover:scale-100 group-focus-within:scale-100" data-desktop-menu-panel>
+                                            <div class="space-y-1 p-2">
+                                                @include('partials.navigation.desktop-branch', [
+                                                    'items' => $item->children,
+                                                    'level' => 0,
+                                                ])
+                                            </div>
                                         </div>
                                     </div>
                                 @endif

@@ -115,6 +115,7 @@ class PropertiesController extends Controller
             'pool',
             'casita',
             'gated_comm',
+            'sort',
         ];
 
         foreach ($singleFields as $field) {
@@ -132,7 +133,7 @@ class PropertiesController extends Controller
 
     private function fetchPropertiesForMap(Request $request): array
     {
-        if (! $this->ampiPropertyApi->isConfigured()) {
+        if (! $this->ampiPropertyApi->isConfigured() && ! $this->ampiPropertyApi->hasLocalProperties()) {
             return [];
         }
 
