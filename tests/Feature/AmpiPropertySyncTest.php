@@ -84,27 +84,50 @@ test('local searches sort and filter prices using normalized currency values', f
     expect($filtered)->toBe(['SMA-MXN', 'SMA-CAD']);
 });
 
+test('local searches default to newest properties by numeric mls id', function () {
+    AmpiProperty::factory()->create([
+        'mls_id' => 'SMA-80',
+        'name' => 'Propiedad Antigua',
+        'price' => 900000,
+        'currency' => 'USD',
+        'raw_payload' => ['mls_id' => 'SMA-80', 'name' => 'Propiedad Antigua'],
+    ]);
+
+    AmpiProperty::factory()->create([
+        'mls_id' => 'SMA-200',
+        'name' => 'Propiedad Reciente',
+        'price' => 100000,
+        'currency' => 'USD',
+        'raw_payload' => ['mls_id' => 'SMA-200', 'name' => 'Propiedad Reciente'],
+    ]);
+
+    $results = collect(app(AmpiPropertyApi::class)->search(['per_page' => 10])['data'])
+        ->pluck('mls_id')
+        ->all();
+
+    expect($results)->toBe(['SMA-200', 'SMA-80']);
+});
+
 test('livewire properties search uses the local database without requiring ampi credentials', function () {
     AmpiProperty::factory()->create([
-        'mls_id' => 'SMA-LOCAL-USD',
+        'mls_id' => 'SMA-80',
         'name' => 'Casa Local USD',
         'price' => 200000,
         'currency' => 'USD',
         'neighborhood' => 'Centro',
-        'raw_payload' => ['mls_id' => 'SMA-LOCAL-USD', 'name' => 'Casa Local USD'],
+        'raw_payload' => ['mls_id' => 'SMA-80', 'name' => 'Casa Local USD'],
     ]);
 
     AmpiProperty::factory()->create([
-        'mls_id' => 'SMA-LOCAL-MXN',
+        'mls_id' => 'SMA-200',
         'name' => 'Casa Local MXN',
         'price' => 5000000,
         'currency' => 'MXN',
         'neighborhood' => 'Centro',
-        'raw_payload' => ['mls_id' => 'SMA-LOCAL-MXN', 'name' => 'Casa Local MXN'],
+        'raw_payload' => ['mls_id' => 'SMA-200', 'name' => 'Casa Local MXN'],
     ]);
 
     Livewire::test(PropertiesSearch::class)
-        ->set('sort', 'price_desc')
         ->call('search')
         ->assertSeeInOrder(['Casa Local MXN', 'Casa Local USD'])
         ->assertDontSee('Falta configurar la API key de AMPI.');

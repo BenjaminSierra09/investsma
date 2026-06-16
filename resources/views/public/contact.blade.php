@@ -10,17 +10,6 @@
                     Comparte presupuesto, zonas de interés y horizonte de compra. Te respondemos con una lectura inicial más útil que una lista genérica.
                 </p>
             </div>
-
-            <div class="surface-panel p-3" data-reveal data-reveal-delay="70" data-spotlight>
-                <div class="overflow-hidden rounded-[24px]">
-                    <img
-                        src="https://picsum.photos/seed/investsma-contact/1400/960"
-                        alt="Casa en San Miguel de Allende"
-                        class="aspect-[4/3] h-full w-full object-cover"
-                        loading="lazy"
-                    >
-                </div>
-            </div>
         </div>
     </section>
 

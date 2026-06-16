@@ -41,7 +41,7 @@ class PropertiesSearch extends Component
         'pool' => ['except' => null],
         'casita' => ['except' => null],
         'gated_comm' => ['except' => null],
-        'sort' => ['except' => 'price_desc'],
+        'sort' => ['except' => 'mls_desc'],
         'page' => ['except' => 1],
         'perPage' => ['except' => 25],
     ];
@@ -88,7 +88,7 @@ class PropertiesSearch extends Component
 
     public ?string $gated_comm = null;
 
-    public string $sort = 'price_desc';
+    public string $sort = 'mls_desc';
 
     public int $page = 1;
 

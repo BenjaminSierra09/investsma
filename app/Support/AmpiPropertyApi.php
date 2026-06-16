@@ -31,6 +31,8 @@ class AmpiPropertyApi
 
     public function searchRemote(array $params = []): ?array
     {
+        unset($params['sort']);
+
         return $this->rememberSuccessful(
             $this->cacheKey('property-search', $params),
             now()->addMinutes($this->searchCacheTtlMinutes()),
@@ -320,7 +322,7 @@ class AmpiPropertyApi
         $query = AmpiProperty::query()->active();
 
         $this->applyLocalFilters($query, $params);
-        $this->applyLocalSort($query, (string) ($params['sort'] ?? 'price_desc'));
+        $this->applyLocalSort($query, (string) ($params['sort'] ?? 'mls_desc'));
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $currentPage);
         $items = $paginator->getCollection()
@@ -395,15 +397,24 @@ class AmpiPropertyApi
                 ->orderBy('normalized_price')
                 ->orderByDesc('api_updated_at')
                 ->orderByDesc('id'),
-            'newest' => $query
-                ->orderByDesc('api_updated_at')
+            'newest', 'mls_desc' => $query
+                ->orderByRaw($this->mlsIdNumericOrderExpression().' DESC')
                 ->orderByDesc('id'),
             default => $query
-                ->orderByRaw('normalized_price IS NULL')
-                ->orderByDesc('normalized_price')
-                ->orderByDesc('api_updated_at')
+                ->orderByRaw($this->mlsIdNumericOrderExpression().' DESC')
                 ->orderByDesc('id'),
         };
+    }
+
+    private function mlsIdNumericOrderExpression(): string
+    {
+        $numericMlsId = "REPLACE(REPLACE(mls_id, 'SMA-', ''), 'sma-', '')";
+
+        if (AmpiProperty::query()->getConnection()->getDriverName() === 'mysql') {
+            return "CAST({$numericMlsId} AS UNSIGNED)";
+        }
+
+        return "CAST({$numericMlsId} AS INTEGER)";
     }
 
     private function fetchLocalNeighborhoodOptions(array $filters = []): array

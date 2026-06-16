@@ -197,9 +197,9 @@
             <div>
                 <label class="field-label">Orden</label>
                 <select wire:model.defer="sort" class="{{ $inputClass }}">
+                    <option value="mls_desc">Más recientes MLS</option>
                     <option value="price_desc">Mayor precio</option>
                     <option value="price_asc">Menor precio</option>
-                    <option value="newest">Más recientes</option>
                 </select>
             </div>
         </div>
