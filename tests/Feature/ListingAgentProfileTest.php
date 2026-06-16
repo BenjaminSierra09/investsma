@@ -72,9 +72,11 @@ it('shows invest sma ampi agents on AMPI MLS properties when they belong to offi
             'name' => 'Laura Invest',
             'email' => 'laura@investsma.com',
             'mobile' => '+52 415 111 2222',
-            'office_id' => 32,
-            'office_name' => 'INVEST SMA',
-            'photo_url' => '/storage/images/6576725a343c5_adelanew.jpg',
+            'office' => [
+                'id' => 32,
+                'name' => 'INVEST SMA',
+            ],
+            'image' => '6576725a343c5_adelanew.jpg',
         ]),
     ]);
 

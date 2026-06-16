@@ -622,6 +622,10 @@ class AmpiPropertyApi
             return null;
         }
 
+        $office = $agent['office'] ?? null;
+        $officeId = $agent['office_id'] ?? $agent['mls_office_id'] ?? data_get($agent, 'office.id');
+        $officeName = $agent['office_name'] ?? (is_array($office) ? ($office['name'] ?? null) : $office);
+
         return [
             'id' => $agent['id'] ?? $agent['agent_id'] ?? $agent['mls_agent_id'] ?? null,
             'name' => trim($name),
@@ -629,11 +633,43 @@ class AmpiPropertyApi
             'last_name' => $lastName,
             'email' => $agent['email'] ?? null,
             'phone' => $agent['mobile'] ?? $agent['cell_phone'] ?? $agent['phone'] ?? $agent['phone_number'] ?? null,
-            'office_id' => $agent['office_id'] ?? $agent['mls_office_id'] ?? null,
-            'office_name' => $agent['office_name'] ?? $agent['office'] ?? null,
-            'photo' => $this->photoUrl($agent['photo'] ?? $agent['photo_url'] ?? $agent['image'] ?? $agent['agent_photo'] ?? $agent['avatar'] ?? null),
+            'office_id' => $officeId,
+            'office_name' => is_string($officeName) ? $officeName : null,
+            'photo' => $this->agentPhotoUrl($agent),
             'bio' => $agent['bio'] ?? $agent['biography'] ?? $agent['description'] ?? null,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $agent
+     */
+    private function agentPhotoUrl(array $agent): ?string
+    {
+        foreach ([
+            'photo',
+            'photo_url',
+            'photoUrl',
+            'image',
+            'image_url',
+            'imageUrl',
+            'image_path',
+            'photo_path',
+            'profile_photo',
+            'profile_photo_url',
+            'profile_picture',
+            'picture',
+            'agent_photo',
+            'avatar',
+            'headshot',
+        ] as $key) {
+            $photoUrl = $this->photoUrl($agent[$key] ?? null);
+
+            if ($photoUrl !== null) {
+                return $photoUrl;
+            }
+        }
+
+        return null;
     }
 
     private function photoUrl(mixed $photo): ?string
@@ -653,20 +689,41 @@ class AmpiPropertyApi
                 return 'https:'.$url;
             }
 
-            return rtrim((string) config('services.ampi.base_url'), '/').'/'.ltrim($url, '/');
+            $path = ltrim($url, '/');
+
+            if (Str::startsWith($path, 'storage/')) {
+                return $this->ampiMediaUrl($path);
+            }
+
+            if (Str::startsWith($path, 'images/')) {
+                return $this->ampiMediaUrl('storage/'.$path);
+            }
+
+            if (! str_contains($path, '/') && preg_match('/\.(avif|gif|jpe?g|png|webp)$/i', $path)) {
+                return $this->ampiMediaUrl('storage/images/'.$path);
+            }
+
+            return $this->ampiMediaUrl($path);
         }
 
         if (! is_array($photo)) {
             return null;
         }
 
-        foreach (['url', 'image', 'src', 'image_url', 'large_url', 'full_url', 'original_url', 'file_url'] as $key) {
-            if (isset($photo[$key]) && is_string($photo[$key]) && trim($photo[$key]) !== '') {
-                return trim($photo[$key]);
+        foreach (['url', 'image', 'src', 'path', 'filename', 'image_url', 'large_url', 'full_url', 'original_url', 'file_url'] as $key) {
+            $photoUrl = $this->photoUrl($photo[$key] ?? null);
+
+            if ($photoUrl !== null) {
+                return $photoUrl;
             }
         }
 
         return null;
+    }
+
+    private function ampiMediaUrl(string $path): string
+    {
+        return rtrim((string) config('services.ampi.base_url'), '/').'/'.ltrim($path, '/');
     }
 
     /**
