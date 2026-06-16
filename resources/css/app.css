@@ -252,6 +252,42 @@
         @apply min-h-32 resize-y;
     }
 
+    .home-hero-media {
+        @apply relative aspect-[16/11] overflow-hidden rounded-[28px] border border-white/80 bg-zinc-200;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .home-filter-bar,
+    .compact-filter-panel {
+        @apply relative overflow-visible rounded-[24px] border border-white/80 bg-white/88 p-4 backdrop-blur-xl;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .filter-label {
+        @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500;
+    }
+
+    .filter-input,
+    .filter-select {
+        @apply mt-1 h-11 w-full rounded-[16px] border border-zinc-200/90 bg-white px-3 text-sm text-zinc-800 shadow-sm outline-none transition duration-200 [transition-timing-function:var(--ease-out-strong)] placeholder:text-zinc-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100;
+    }
+
+    .filter-select {
+        @apply py-2;
+    }
+
+    .quick-filter-chip {
+        @apply inline-flex items-center rounded-full border border-zinc-200/80 bg-white/78 px-3 py-1.5 font-semibold text-zinc-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800;
+    }
+
+    .advanced-filter-drawer {
+        @apply rounded-[18px] border border-zinc-200/80 bg-white/72 p-3;
+    }
+
+    .advanced-filter-drawer summary::-webkit-details-marker {
+        display: none;
+    }
+
     .cta-band {
         @apply rounded-[28px] border border-zinc-200/80 bg-zinc-950 px-8 py-8 text-white;
         box-shadow: 0 30px 72px -40px rgba(15, 23, 42, 0.75);
@@ -384,6 +420,29 @@ select:focus[data-flux-control] {
 
 .choices__placeholder {
     @apply opacity-100 text-zinc-400;
+}
+
+.home-filter-bar .choices,
+.compact-filter-panel .choices {
+    @apply mt-1;
+}
+
+.home-filter-bar .choices__inner,
+.compact-filter-panel .choices__inner {
+    @apply min-h-11 rounded-[16px] px-2.5 py-1.5;
+    box-shadow: 0 12px 24px -26px rgba(46, 33, 22, 0.42);
+}
+
+.home-filter-bar .choices__list--multiple .choices__item,
+.compact-filter-panel .choices__list--multiple .choices__item {
+    @apply px-2 py-0.5 text-[11px];
+}
+
+.home-filter-bar .choices__list--dropdown,
+.home-filter-bar .choices__list[aria-expanded],
+.compact-filter-panel .choices__list--dropdown,
+.compact-filter-panel .choices__list[aria-expanded] {
+    @apply rounded-[16px];
 }
 
 [data-loading] {

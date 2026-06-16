@@ -1,22 +1,20 @@
 @php
     use Illuminate\Support\Str;
 
-    $filterClass = 'field-select';
-    $inputClass = 'field-input';
     $selectedNeighborhoods = is_array($neighborhood)
         ? array_filter($neighborhood)
         : (filled(trim((string) $neighborhood)) ? [trim((string) $neighborhood)] : []);
 @endphp
 
-<section class="section-wrap py-10 lg:py-14">
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,0.76fr)_minmax(0,1.24fr)] lg:items-end">
+<section class="section-wrap py-8 lg:py-10">
+    <div class="grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-end">
         <div data-reveal>
-            <div class="section-label">Buscador de propiedades</div>
-            <h1 class="section-title text-4xl sm:text-5xl">
-                Filtra el inventario con una vista más clara.
+            <div class="eyebrow">Buscador de propiedades</div>
+            <h1 class="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl">
+                Inventario activo, filtros más ligeros.
             </h1>
-            <p class="section-copy max-w-xl">
-                Busca por zona, rango, tamaño o características clave para abrir un shortlist más útil antes de visitar.
+            <p class="mt-4 max-w-xl text-base leading-relaxed text-zinc-600">
+                Busca por zona, rango y características clave sin perder de vista los resultados.
             </p>
         </div>
 
@@ -54,39 +52,41 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
             </a>
-            <button type="button" wire:click="resetFilters" class="button-ghost">
+            <button type="button" wire:click="resetFilters" class="button-ghost hidden xl:inline-flex">
                 Limpiar filtros
             </button>
         </div>
     </div>
 
-    <form wire:submit.prevent="search" class="mt-8 surface-panel p-5 sm:p-7" data-reveal data-reveal-delay="100" data-spotlight>
-        <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.15fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]">
+    <form wire:submit.prevent="search" class="compact-filter-panel mt-6" data-reveal data-reveal-delay="100">
+        <div class="grid gap-3 xl:grid-cols-[minmax(180px,1.5fr)_minmax(160px,1.1fr)_minmax(140px,0.85fr)_minmax(120px,0.7fr)_minmax(120px,0.7fr)_auto] xl:items-end">
             <div>
-                <label class="field-label">Keywords</label>
+                <label class="filter-label" for="search-keywords">Keywords</label>
                 <div class="relative">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m1.85-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
                     </svg>
                     <input
+                        id="search-keywords"
                         wire:model.defer="keywords"
                         type="text"
-                        class="{{ $inputClass }} pl-12"
-                        placeholder="jardín, terraza, centro, inversión, vista"
+                        class="filter-input pl-9"
+                        placeholder="jardín, terraza, centro"
                     >
                 </div>
             </div>
 
             <div>
-                <label class="field-label">Zona o colonia</label>
+                <label class="filter-label" for="search-neighborhood">Zona</label>
                 <div wire:ignore>
                     <select
+                        id="search-neighborhood"
                         multiple
                         data-choices
                         data-choices-remove-item-button="true"
-                        data-choices-placeholder-value="Busca una o varias colonias"
+                        data-choices-placeholder-value="Colonias"
                         data-livewire-model="neighborhood"
-                        class="{{ $filterClass }}"
+                        class="filter-select"
                     >
                         @foreach ($neighborhoods as $item)
                             @php
@@ -102,13 +102,14 @@
             </div>
 
             <div>
-                <label class="field-label">Tipo</label>
+                <label class="filter-label" for="search-category">Tipo</label>
                 <div wire:ignore>
                     <select
+                        id="search-category"
                         data-choices
-                        data-choices-placeholder-value="Selecciona una categoría"
+                        data-choices-placeholder-value="Tipo"
                         data-livewire-model="category"
-                        class="{{ $filterClass }}"
+                        class="filter-select"
                     >
                         <option value="">Todas</option>
                         <option value="Residential" @selected($category === 'Residential')>Residencial</option>
@@ -120,125 +121,129 @@
             </div>
 
             <div>
-                <label class="field-label">Estatus</label>
-                <div wire:ignore>
-                    <select
-                        data-choices
-                        data-choices-placeholder-value="Selecciona un estatus"
-                        data-livewire-model="status"
-                        class="{{ $filterClass }}"
-                    >
-                        <option value="">Todos</option>
-                        <option value="For Sale" @selected($status === 'For Sale')>En venta</option>
-                        <option value="Price Reduction" @selected($status === 'Price Reduction')>Baja de precio</option>
-                        <option value="For Rent" @selected($status === 'For Rent')>En renta</option>
-                        <option value="Contract Pending" @selected($status === 'Contract Pending')>Contrato pendiente</option>
-                        <option value="Under Contract" @selected($status === 'Under Contract')>Bajo contrato</option>
-                    </select>
-                </div>
+                <label class="filter-label" for="search-price-min">Mínimo</label>
+                <input id="search-price-min" wire:model.defer="price_min" type="number" min="0" class="filter-input" placeholder="100000">
             </div>
 
-            <div class="flex flex-col justify-end">
-                <button type="submit" class="button-primary h-[52px] w-full data-loading:pointer-events-none data-loading:opacity-90">
+            <div>
+                <label class="filter-label" for="search-price-max">Máximo</label>
+                <input id="search-price-max" wire:model.defer="price_max" type="number" min="0" class="filter-input" placeholder="500000">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 xl:flex xl:flex-col xl:justify-end">
+                <button type="submit" class="button-primary h-11 w-full px-5 data-loading:pointer-events-none data-loading:opacity-90">
                     <span class="in-data-loading:hidden">Buscar</span>
                     <span class="hidden in-data-loading:inline">Buscando</span>
+                </button>
+                <button type="button" wire:click="resetFilters" class="button-secondary h-11 w-full px-4 xl:hidden">
+                    Limpiar
                 </button>
             </div>
         </div>
 
-        <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-7">
-            <div>
-                <label class="field-label">Precio mínimo</label>
-                <input wire:model.defer="price_min" type="number" min="0" class="{{ $inputClass }}" placeholder="100000">
-            </div>
-
-            <div>
-                <label class="field-label">Precio máximo</label>
-                <input wire:model.defer="price_max" type="number" min="0" class="{{ $inputClass }}" placeholder="500000">
-            </div>
-
-            <div>
-                <label class="field-label">Recámaras mínimas</label>
-                <input wire:model.defer="bedrooms" type="number" min="0" class="{{ $inputClass }}" placeholder="2">
-            </div>
-
-            <div>
-                <label class="field-label">Baños mínimos</label>
-                <input wire:model.defer="bathrooms" type="number" min="0" class="{{ $inputClass }}" placeholder="2">
-            </div>
-
-            <div>
-                <label class="field-label">Moneda</label>
-                <div wire:ignore>
-                    <select
-                        data-choices
-                        data-choices-placeholder-value="Selecciona una moneda"
-                        data-livewire-model="currency"
-                        class="{{ $filterClass }}"
-                    >
-                        <option value="">Cualquiera</option>
-                        <option value="USD" @selected($currency === 'USD')>USD</option>
-                        <option value="MXN" @selected($currency === 'MXN')>MXN</option>
-                        <option value="CAD" @selected($currency === 'CAD')>CAD</option>
-                        <option value="EUR" @selected($currency === 'EUR')>EUR</option>
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <label class="field-label">Resultados por página</label>
-                <select wire:model.defer="perPage" class="{{ $inputClass }}">
-                    @foreach ([12, 24, 36] as $count)
-                        <option value="{{ $count }}">{{ $count }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <label class="field-label">Orden</label>
-                <select wire:model.defer="sort" class="{{ $inputClass }}">
-                    <option value="mls_desc">Más recientes MLS</option>
-                    <option value="price_desc">Mayor precio</option>
-                    <option value="price_asc">Menor precio</option>
-                </select>
-            </div>
-        </div>
-
-        <details class="mt-5 rounded-[24px] border border-zinc-200/80 bg-white/72 p-4">
+        <details class="advanced-filter-drawer mt-4">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-zinc-900">
-                <span>Más filtros</span>
-                <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-700">Opcional</span>
+                <span>Refinar búsqueda</span>
+                <span class="text-xs font-semibold text-amber-700">Más filtros</span>
             </summary>
 
-            <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                 <div>
-                    <label class="field-label">Construcción mínima (m2)</label>
-                    <input wire:model.defer="construction_meters_min" type="number" min="0" class="{{ $inputClass }}">
-                </div>
-
-                <div>
-                    <label class="field-label">Construcción máxima (m2)</label>
-                    <input wire:model.defer="construction_meters_max" type="number" min="0" class="{{ $inputClass }}">
-                </div>
-
-                <div>
-                    <label class="field-label">Terreno mínimo (m2)</label>
-                    <input wire:model.defer="lot_meters_min" type="number" min="0" class="{{ $inputClass }}">
-                </div>
-
-                <div>
-                    <label class="field-label">Terreno máximo (m2)</label>
-                    <input wire:model.defer="lot_meters_max" type="number" min="0" class="{{ $inputClass }}">
-                </div>
-
-                <div>
-                    <label class="field-label">Alberca</label>
+                    <label class="filter-label" for="search-status">Estatus</label>
                     <div wire:ignore>
                         <select
+                            id="search-status"
+                            data-choices
+                            data-choices-placeholder-value="Estatus"
+                            data-livewire-model="status"
+                            class="filter-select"
+                        >
+                            <option value="">Todos</option>
+                            <option value="For Sale" @selected($status === 'For Sale')>En venta</option>
+                            <option value="Price Reduction" @selected($status === 'Price Reduction')>Baja de precio</option>
+                            <option value="For Rent" @selected($status === 'For Rent')>En renta</option>
+                            <option value="Contract Pending" @selected($status === 'Contract Pending')>Contrato pendiente</option>
+                            <option value="Under Contract" @selected($status === 'Under Contract')>Bajo contrato</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-bedrooms">Recámaras</label>
+                    <input id="search-bedrooms" wire:model.defer="bedrooms" type="number" min="0" class="filter-input" placeholder="2">
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-bathrooms">Baños</label>
+                    <input id="search-bathrooms" wire:model.defer="bathrooms" type="number" min="0" class="filter-input" placeholder="2">
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-currency">Moneda</label>
+                    <div wire:ignore>
+                        <select
+                            id="search-currency"
+                            data-choices
+                            data-choices-placeholder-value="Moneda"
+                            data-livewire-model="currency"
+                            class="filter-select"
+                        >
+                            <option value="">Cualquiera</option>
+                            <option value="USD" @selected($currency === 'USD')>USD</option>
+                            <option value="MXN" @selected($currency === 'MXN')>MXN</option>
+                            <option value="CAD" @selected($currency === 'CAD')>CAD</option>
+                            <option value="EUR" @selected($currency === 'EUR')>EUR</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-per-page">Por página</label>
+                    <select id="search-per-page" wire:model.defer="perPage" class="filter-input">
+                        @foreach ([12, 24, 36] as $count)
+                            <option value="{{ $count }}">{{ $count }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-sort">Orden</label>
+                    <select id="search-sort" wire:model.defer="sort" class="filter-input">
+                        <option value="mls_desc">Más recientes MLS</option>
+                        <option value="price_desc">Mayor precio</option>
+                        <option value="price_asc">Menor precio</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-construction-min">Construcción mín.</label>
+                    <input id="search-construction-min" wire:model.defer="construction_meters_min" type="number" min="0" class="filter-input">
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-construction-max">Construcción máx.</label>
+                    <input id="search-construction-max" wire:model.defer="construction_meters_max" type="number" min="0" class="filter-input">
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-lot-min">Terreno mín.</label>
+                    <input id="search-lot-min" wire:model.defer="lot_meters_min" type="number" min="0" class="filter-input">
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-lot-max">Terreno máx.</label>
+                    <input id="search-lot-max" wire:model.defer="lot_meters_max" type="number" min="0" class="filter-input">
+                </div>
+
+                <div>
+                    <label class="filter-label" for="search-pool">Alberca</label>
+                    <div wire:ignore>
+                        <select
+                            id="search-pool"
                             data-choices
                             data-choices-placeholder-value="Indistinto"
                             data-livewire-model="pool"
-                            class="{{ $filterClass }}"
+                            class="filter-select"
                         >
                             <option value="">Indistinto</option>
                             <option value="Yes" @selected($pool === 'Yes')>Sí</option>
@@ -248,13 +253,14 @@
                 </div>
 
                 <div>
-                    <label class="field-label">Casita</label>
+                    <label class="filter-label" for="search-casita">Casita</label>
                     <div wire:ignore>
                         <select
+                            id="search-casita"
                             data-choices
                             data-choices-placeholder-value="Indistinto"
                             data-livewire-model="casita"
-                            class="{{ $filterClass }}"
+                            class="filter-select"
                         >
                             <option value="">Indistinto</option>
                             <option value="Yes" @selected($casita === 'Yes')>Sí</option>
@@ -264,15 +270,20 @@
                 </div>
 
                 <div>
-                    <label class="field-label">Pisos mínimos</label>
-                    <input wire:model.defer="floors" type="number" min="0" class="{{ $inputClass }}" placeholder="1">
+                    <label class="filter-label" for="search-floors">Pisos</label>
+                    <input id="search-floors" wire:model.defer="floors" type="number" min="0" class="filter-input" placeholder="1">
                 </div>
             </div>
         </details>
 
-        <div class="mt-5 flex flex-col gap-3 border-t border-zinc-200/70 pt-5 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mt-4 flex flex-col gap-3 border-t border-zinc-200/70 pt-4 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <p>Usa keywords para estilo o intención, y filtros para cerrar el rango real de búsqueda.</p>
-            <p>{{ $perPage }} resultados por página</p>
+            <div class="flex gap-3">
+                <p>{{ $perPage }} resultados por página</p>
+                <button type="button" wire:click="resetFilters" class="hidden font-semibold text-amber-700 transition hover:text-amber-800 xl:inline">
+                    Limpiar filtros
+                </button>
+            </div>
         </div>
     </form>
 

@@ -39,149 +39,92 @@
 @endphp
 
 <x-layouts.public title="Bienes raíces en San Miguel de Allende | investsma">
-    <section class="section-wrap pb-12 pt-10 lg:pt-14">
-        <div class="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center">
+    <section class="section-wrap pb-10 pt-8 lg:pt-12">
+        <div class="grid gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-center">
             <div class="max-w-2xl" data-reveal>
-                <div class="eyebrow">Bienes raíces con lectura local</div>
-                <h1 class="section-title text-5xl leading-[1.02] sm:text-6xl">
-                    Propiedades en San Miguel de Allende con criterio patrimonial.
+                <div class="eyebrow">Bienes raíces en San Miguel</div>
+                <h1 class="mt-4 text-4xl font-semibold leading-[1.04] tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl">
+                    Encuentra propiedad con mejor criterio local.
                 </h1>
-                <p class="section-copy max-w-xl text-lg">
-                    Seleccionamos casas, terrenos y oportunidades con mejor contexto legal, urbano y comercial para que compres con más claridad.
+                <p class="mt-5 max-w-xl text-lg leading-relaxed text-zinc-600">
+                    Filtra inventario activo y compara casas, terrenos e inversión con contexto de zona.
                 </p>
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                <div class="mt-7 flex flex-col gap-3 sm:flex-row">
                     <a href="{{ route('properties.index') }}" class="button-primary">Explorar propiedades</a>
                     <a href="{{ route('contact') }}" class="button-secondary">Agenda una visita</a>
                 </div>
             </div>
 
-            <div class="relative lg:pl-8" data-reveal data-reveal-delay="70">
-                <div class="surface-panel p-3" data-spotlight>
-                    <div class="relative overflow-hidden rounded-[24px]">
-                        <div class="property-media aspect-[4/5] bg-zinc-200">
-                            <img src="{{ $heroImage }}" alt="{{ $heroTitle }}" class="h-full w-full object-cover" loading="eager">
-                        </div>
-
-                        <div class="absolute inset-x-0 bottom-0 p-5">
-                            <div class="rounded-[22px] border border-white/15 bg-zinc-950/70 p-5 text-white backdrop-blur-xl">
-                                <p class="text-sm text-white/70">Selección destacada</p>
-                                <div class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <h2 class="text-2xl font-semibold leading-tight">{{ $heroTitle }}</h2>
-                                        <p class="mt-2 text-sm text-white/72">{{ $heroLocation }}</p>
-                                    </div>
-                                    <div class="rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-amber-200">
-                                        {{ $heroPrice }}
-                                    </div>
-                                </div>
-                                <div class="mt-5 grid gap-3 sm:grid-cols-3">
-                                    <div class="rounded-[18px] bg-white/8 px-4 py-4">
-                                        <p class="text-xs uppercase tracking-[0.12em] text-white/55">Filtro</p>
-                                        <p class="mt-2 text-sm font-medium text-white">Ubicación y liquidez</p>
-                                    </div>
-                                    <div class="rounded-[18px] bg-white/8 px-4 py-4">
-                                        <p class="text-xs uppercase tracking-[0.12em] text-white/55">Lectura</p>
-                                        <p class="mt-2 text-sm font-medium text-white">Comparables y riesgos</p>
-                                    </div>
-                                    <div class="rounded-[18px] bg-white/8 px-4 py-4">
-                                        <p class="text-xs uppercase tracking-[0.12em] text-white/55">Acompañamiento</p>
-                                        <p class="mt-2 text-sm font-medium text-white">Visita y cierre</p>
-                                    </div>
-                                </div>
+            <div class="relative" data-reveal data-reveal-delay="70">
+                <div class="home-hero-media" data-spotlight>
+                    <img
+                        src="{{ $heroImage }}"
+                        alt="{{ $heroTitle }}"
+                        class="h-full w-full object-cover"
+                        loading="eager"
+                    >
+                    <div class="absolute inset-x-4 bottom-4 rounded-[22px] border border-white/20 bg-zinc-950/74 p-4 text-white backdrop-blur-xl sm:inset-x-5 sm:bottom-5">
+                        <p class="text-sm font-medium text-white/72">Selección destacada</p>
+                        <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <h2 class="line-clamp-2 text-xl font-semibold leading-tight">{{ $heroTitle }}</h2>
+                                <p class="mt-1 text-sm text-white/70">{{ $heroLocation }}</p>
+                            </div>
+                            <div class="whitespace-nowrap rounded-full bg-white/12 px-3 py-1.5 text-sm font-semibold text-amber-100">
+                                {{ $heroPrice }}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <section class="section-wrap pb-8">
-        <div class="grid gap-4 lg:grid-cols-3">
-            <div class="metric-card" data-reveal>
-                <p class="text-lg font-semibold text-zinc-950">Compra con un shortlist más claro</p>
-                <p class="mt-3 text-sm leading-relaxed text-zinc-600">
-                    Partimos del inventario real y lo reducimos a opciones que sí vale la pena visitar.
-                </p>
-            </div>
-            <div class="metric-card" data-reveal data-reveal-delay="50">
-                <p class="text-lg font-semibold text-zinc-950">Contexto local antes de negociar</p>
-                <p class="mt-3 text-sm leading-relaxed text-zinc-600">
-                    Revisamos zona, comparables, permisos y fricción operativa antes de dar un siguiente paso.
-                </p>
-            </div>
-            <div class="metric-card" data-reveal data-reveal-delay="100">
-                <p class="text-lg font-semibold text-zinc-950">Un solo equipo del tour al cierre</p>
-                <p class="mt-3 text-sm leading-relaxed text-zinc-600">
-                    Coordinamos visitas, seguimiento comercial y el proceso documental sin perder ritmo.
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <section class="section-wrap relative z-20 py-8">
-        <div class="surface-panel z-20 overflow-visible p-6 sm:p-8" data-reveal data-spotlight>
-            <div class="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
+        <div class="mt-7 home-filter-bar" data-reveal data-reveal-delay="110">
+            <form action="{{ route('properties.index') }}" method="GET" class="grid gap-3 lg:grid-cols-[minmax(180px,1.4fr)_minmax(150px,1fr)_minmax(140px,0.85fr)_minmax(130px,0.75fr)_auto] lg:items-end">
                 <div>
-                    <div class="section-label">Búsqueda rápida</div>
-                    <h2 class="mt-4 text-3xl font-semibold tracking-tight text-zinc-950">
-                        Empieza por zona, rango y tipo de propiedad.
-                    </h2>
-                    <p class="mt-4 max-w-md text-sm leading-relaxed text-zinc-600">
-                        Si ya tienes una idea del ticket o del barrio, este filtro te deja entrar directo al inventario activo.
-                    </p>
+                    <label class="filter-label" for="home-keywords">Keywords</label>
+                    <input
+                        id="home-keywords"
+                        type="text"
+                        name="keywords"
+                        class="filter-input"
+                        placeholder="jardín, terraza, centro"
+                    >
                 </div>
 
-                <form action="{{ route('properties.index') }}" method="GET" class="grid gap-4">
-                    <div class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-                        <div>
-                            <label class="field-label">Keywords</label>
-                            <input
-                                type="text"
-                                name="keywords"
-                                class="field-input"
-                                placeholder="jardín, terraza, centro, inversión, vista"
-                            >
-                        </div>
+                <div>
+                    <label class="filter-label" for="home-neighborhood">Zona</label>
+                    <select id="home-neighborhood" name="neighborhood" data-choices data-choices-placeholder-value="Todas las zonas" class="filter-select">
+                        <option value="">Todas</option>
+                        @foreach ($neighborhoods as $neighborhood)
+                            <option value="{{ $neighborhood }}">{{ $neighborhood }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                        <div>
-                            <label class="field-label">Zona o colonia</label>
-                            <select name="neighborhood" data-choices data-choices-placeholder-value="Selecciona una colonia" class="field-select">
-                                <option value="">Todas</option>
-                                @foreach ($neighborhoods as $neighborhood)
-                                    <option value="{{ $neighborhood }}">{{ $neighborhood }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+                <div>
+                    <label class="filter-label" for="home-category">Tipo</label>
+                    <select id="home-category" name="category" data-choices data-choices-placeholder-value="Tipo" class="filter-select">
+                        <option value="">Todos</option>
+                        <option value="Residential">Residencial</option>
+                        <option value="Land and Lots">Terrenos</option>
+                        <option value="Commercial">Comercial</option>
+                        <option value="Pre Sales">Preventa</option>
+                    </select>
+                </div>
 
-                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_auto]">
-                        <div>
-                            <label class="field-label">Tipo</label>
-                            <select name="category" data-choices data-choices-placeholder-value="Selecciona una categoría" class="field-select">
-                                <option value="">Todos</option>
-                                <option value="Residential">Residencial</option>
-                                <option value="Land and Lots">Terrenos</option>
-                                <option value="Commercial">Comercial</option>
-                                <option value="Pre Sales">Preventa</option>
-                            </select>
-                        </div>
+                <div>
+                    <label class="filter-label" for="home-price-max">Precio máximo</label>
+                    <input id="home-price-max" type="number" min="0" step="1000" name="price_max" class="filter-input" placeholder="500000">
+                </div>
 
-                        <div>
-                            <label class="field-label">Precio mínimo</label>
-                            <input type="number" min="0" step="1000" name="price_min" class="field-input" placeholder="100000">
-                        </div>
+                <button type="submit" class="button-primary h-11 px-5">Buscar</button>
+            </form>
 
-                        <div>
-                            <label class="field-label">Precio máximo</label>
-                            <input type="number" min="0" step="1000" name="price_max" class="field-input" placeholder="500000">
-                        </div>
-
-                        <div class="flex flex-col justify-end">
-                            <button type="submit" class="button-primary h-[52px] w-full">Ver propiedades</button>
-                        </div>
-                    </div>
-                </form>
+            <div class="mt-4 flex flex-wrap gap-2 text-sm">
+                <a href="{{ route('properties.index', ['category' => 'Residential']) }}" class="quick-filter-chip">Casas</a>
+                <a href="{{ route('properties.index', ['category' => 'Land and Lots']) }}" class="quick-filter-chip">Terrenos</a>
+                <a href="{{ route('properties.index', ['status' => 'Price Reduction']) }}" class="quick-filter-chip">Baja de precio</a>
             </div>
         </div>
     </section>
