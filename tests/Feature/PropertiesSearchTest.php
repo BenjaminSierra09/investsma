@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Public\PropertiesSearch;
+use App\Models\AmpiProperty;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -51,7 +52,7 @@ test('home search exposes observed neighborhoods missing from the official catal
 
     $response
         ->assertOk()
-        ->assertSee('Propiedades en San Miguel de Allende con criterio patrimonial.')
+        ->assertSee('Encuentra propiedad con mejor criterio local.')
         ->assertSee('Explorar propiedades')
         ->assertSeeHtml('name="keywords"')
         ->assertSeeHtml('option value="San Miguel de Allende Centro"')
@@ -139,7 +140,7 @@ test('properties index renders successfully without neighborhood filters in the 
 
     $this->get(route('properties.index'))
         ->assertOk()
-        ->assertSee('Filtra el inventario con una vista más clara.')
+        ->assertSee('Inventario activo, filtros más ligeros.')
         ->assertSee('Casa Centro');
 });
 
@@ -319,7 +320,7 @@ test('livewire property search renders observed neighborhoods and forwards keywo
     });
 
     Livewire::test(PropertiesSearch::class)
-        ->assertSee('Filtra el inventario con una vista más clara.')
+        ->assertSee('Inventario activo, filtros más ligeros.')
         ->assertSee('Libramiento A Dolores')
         ->set('neighborhood', ['Libramiento A Dolores'])
         ->set('keywords', 'jardin')
@@ -513,4 +514,19 @@ test('livewire property search reuses cached results for identical filters', fun
         ->assertSee('Casa Cache');
 
     expect($searchRequestCount)->toBe(1);
+});
+
+test('livewire search keeps neighborhood as an array when choices sends a string', function () {
+    AmpiProperty::factory()->create([
+        'mls_id' => 'SMA-301',
+        'name' => 'Casa Centro Choices',
+        'neighborhood' => 'Centro',
+        'raw_payload' => ['mls_id' => 'SMA-301', 'name' => 'Casa Centro Choices'],
+    ]);
+
+    Livewire::test(PropertiesSearch::class)
+        ->set('neighborhood', 'Centro')
+        ->call('search')
+        ->assertSet('neighborhood', ['Centro'])
+        ->assertSee('Casa Centro Choices');
 });

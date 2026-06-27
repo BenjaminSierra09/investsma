@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Agent;
 use App\Models\MenuItem;
 
 it('keeps desktop dropdowns visible while moving from the menu item to its submenu', function () {
@@ -34,4 +35,28 @@ it('keeps desktop dropdowns visible while moving from the menu item to its subme
     expect(file_get_contents(resource_path('css/app.css')))
         ->toContain('[data-desktop-menu-item]:hover > [data-hover-bridge]')
         ->toContain('[data-desktop-menu-item]:focus-within > [data-hover-bridge]');
+});
+
+it('shows agents in the public menu and renders active agent profiles', function () {
+    Agent::factory()->create([
+        'name' => 'María González',
+        'title' => 'Asesora inmobiliaria',
+        'bio' => 'Especialista en propiedades patrimoniales.',
+    ]);
+
+    Agent::factory()->inactive()->create([
+        'name' => 'Agente Inactivo',
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Agentes')
+        ->assertSee(route('agents.index', absolute: false));
+
+    $this->get(route('agents.index'))
+        ->assertOk()
+        ->assertSee('María González')
+        ->assertSee('Asesora inmobiliaria')
+        ->assertSee('Especialista en propiedades patrimoniales.')
+        ->assertDontSee('Agente Inactivo');
 });

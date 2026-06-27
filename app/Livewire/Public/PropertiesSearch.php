@@ -118,6 +118,13 @@ class PropertiesSearch extends Component
         }
     }
 
+    public function updated($name, $value): void
+    {
+        if ($name === 'neighborhood') {
+            $this->neighborhood = $this->toArrayList($value);
+        }
+    }
+
     public function updatedNeighborhood($value): void
     {
         $this->neighborhood = $this->toArrayList($value);
@@ -214,9 +221,9 @@ class PropertiesSearch extends Component
 
         $arrayFields = ['neighborhood'];
         foreach ($arrayFields as $field) {
-            $value = $this->{$field};
-            if (is_array($value) && count(array_filter($value))) {
-                $params[$field] = array_values(array_filter($value));
+            $value = $this->toArrayList($this->{$field});
+            if (count($value) > 0) {
+                $params[$field] = $value;
             }
         }
 
@@ -294,7 +301,7 @@ class PropertiesSearch extends Component
     private function toArrayList($value): array
     {
         if (is_array($value)) {
-            return array_filter($value);
+            return array_values(array_filter($value, fn (mixed $item): bool => filled($item)));
         }
 
         if (is_string($value)) {

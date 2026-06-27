@@ -16,6 +16,15 @@
                 <flux:navbar.item icon="document-text" :href="route('cms.pages')" :current="request()->routeIs('cms.pages')" wire:navigate>
                     {{ __('Páginas') }}
                 </flux:navbar.item>
+                <flux:navbar.item icon="building-office-2" :href="route('cms.listings')" :current="request()->routeIs('cms.listings*')" wire:navigate>
+                    {{ __('Listados') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="user-circle" :href="route('cms.agents')" :current="request()->routeIs('cms.agents*')" wire:navigate>
+                    {{ __('Agentes') }}
+                </flux:navbar.item>
+                <flux:navbar.item icon="users" :href="route('cms.users')" :current="request()->routeIs('cms.users')" wire:navigate>
+                    {{ __('Usuarios') }}
+                </flux:navbar.item>
                 <flux:navbar.item icon="list-bullet" :href="route('cms.menus')" :current="request()->routeIs('cms.menus')" wire:navigate>
                     {{ __('Menú') }}
                 </flux:navbar.item>
@@ -64,6 +73,15 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="document-text" :href="route('cms.pages')" :current="request()->routeIs('cms.pages')" wire:navigate>
                         {{ __('Páginas') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="building-office-2" :href="route('cms.listings')" :current="request()->routeIs('cms.listings*')" wire:navigate>
+                        {{ __('Listados') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="user-circle" :href="route('cms.agents')" :current="request()->routeIs('cms.agents*')" wire:navigate>
+                        {{ __('Agentes') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="users" :href="route('cms.users')" :current="request()->routeIs('cms.users')" wire:navigate>
+                        {{ __('Usuarios') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="list-bullet" :href="route('cms.menus')" :current="request()->routeIs('cms.menus')" wire:navigate>
                         {{ __('Menú principal') }}

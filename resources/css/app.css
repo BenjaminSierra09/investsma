@@ -397,7 +397,9 @@ select:focus[data-flux-control] {
 
 .choices__list--dropdown,
 .choices__list[aria-expanded] {
-    @apply z-20 mt-2 overflow-hidden rounded-[20px] border border-zinc-200/90 bg-white/96 shadow-xl backdrop-blur-xl;
+    @apply z-20 mt-2 overflow-y-auto rounded-[20px] border border-zinc-200/90 bg-white/96 shadow-xl backdrop-blur-xl;
+    max-height: min(18rem, 48vh);
+    overscroll-behavior: contain;
 }
 
 .choices[data-type*="select-one"] .choices__list--dropdown,
@@ -443,6 +445,7 @@ select:focus[data-flux-control] {
 .compact-filter-panel .choices__list--dropdown,
 .compact-filter-panel .choices__list[aria-expanded] {
     @apply rounded-[16px];
+    max-height: min(16rem, 42vh);
 }
 
 [data-loading] {

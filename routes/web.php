@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/nosotros', [PageController::class, 'about'])->name('about');
+Route::get('/agentes', [PageController::class, 'agents'])->name('agents.index');
 Route::get('/contacto', [PageController::class, 'contact'])->name('contact');
 Route::post('/contacto', [PageController::class, 'contactSubmit'])->name('contact.submit');
 

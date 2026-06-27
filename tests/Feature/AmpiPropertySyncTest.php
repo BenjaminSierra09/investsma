@@ -3,6 +3,7 @@
 use App\Livewire\Public\PropertiesSearch;
 use App\Models\AmpiProperty;
 use App\Support\AmpiPropertyApi;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
@@ -39,6 +40,14 @@ test('ampi properties are synchronized into the local database', function () {
         'currency' => 'USD',
         'normalized_price' => 3400000,
     ]);
+});
+
+test('ampi property sync is scheduled as a direct artisan command', function () {
+    Artisan::call('schedule:list');
+
+    expect(Artisan::output())
+        ->toContain('ampi:sync-properties')
+        ->not->toContain('App\Jobs\SyncAmpiPropertiesJob');
 });
 
 test('local searches sort and filter prices using normalized currency values', function () {

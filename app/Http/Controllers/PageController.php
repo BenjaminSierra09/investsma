@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ContactMessage;
+use App\Models\Agent;
 use App\Models\Listing;
 use App\Models\Page;
 use App\Support\AmpiPropertyApi;
@@ -62,6 +63,23 @@ class PageController extends Controller
         );
 
         return view('public.about');
+    }
+
+    public function agents(): View
+    {
+        SeoData::apply(
+            title: 'Agentes | investsma',
+            description: 'Conoce al equipo de asesores de investsma para comprar, vender o invertir en San Miguel de Allende.',
+            keywords: ['agentes', 'asesores inmobiliarios', 'investsma', 'San Miguel de Allende'],
+            image: asset('logotipo.png'),
+        );
+
+        return view('public.agents', [
+            'agents' => Agent::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(),
+        ]);
     }
 
     public function contact(): View

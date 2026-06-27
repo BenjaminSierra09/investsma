@@ -63,6 +63,18 @@
                     'children' => $listingChildren,
                 ]);
             }
+
+            $agentsIndex = $items->search(
+                fn ($item) => rtrim($item->url, '/') === rtrim(route('agents.index'), '/')
+            );
+
+            if ($agentsIndex === false) {
+                $items = $items->push((object) [
+                    'label' => 'Agentes',
+                    'url' => route('agents.index'),
+                    'children' => collect(),
+                ]);
+            }
         @endphp
 
         <div class="relative overflow-hidden">

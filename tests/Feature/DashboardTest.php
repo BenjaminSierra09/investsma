@@ -19,6 +19,16 @@ test('dashboard cms routes use the dashboard prefix', function () {
     expect(route('cms.pages', absolute: false))->toBe('/dashboard/paginas');
 });
 
+test('dashboard navigation includes agents', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $this->get(route('cms.pages'))
+        ->assertOk()
+        ->assertSee('Agentes')
+        ->assertSee(route('cms.agents', absolute: false));
+});
+
 test('old cms page routes redirect to the dashboard prefix', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
