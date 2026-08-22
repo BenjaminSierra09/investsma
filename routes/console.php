@@ -8,8 +8,9 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('ampi:sync-properties')
-    ->everyFourHours()
+Schedule::command('ampi:sync-properties --delete-missing')
+    ->dailyAt('02:00')
     ->timezone('America/Mexico_City')
-    ->withoutOverlapping(240)
+    ->withoutOverlapping(360)
+    ->appendOutputTo(storage_path('logs/ampi-sync.log'))
     ->name('ampi-properties-sync');

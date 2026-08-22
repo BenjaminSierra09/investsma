@@ -15,18 +15,23 @@ class AmpiPropertySyncService
 
     /**
      * @param  array<string, mixed>  $options
-     * @return array{success: bool, synced: int, pages: int}
+     * @return array{success: bool, complete: bool, synced: int, pages: int, deleted: int, remote_total: ?int}
      */
     public function sync(array $options = []): array
     {
         $perPage = max(1, (int) ($options['per_page'] ?? config('services.ampi.sync.per_page', 100)));
         $maxPages = max(1, (int) ($options['max_pages'] ?? config('services.ampi.sync.max_pages', 25)));
         $page = max(1, (int) ($options['page'] ?? 1));
-        $lastPage = $page;
+        $startingPage = $page;
         $synced = 0;
+        $pages = 0;
+        $deleted = 0;
+        $complete = false;
+        $remoteTotal = null;
+        $catalogTotalIsStable = true;
         $seenMlsIds = [];
 
-        do {
+        while ($pages < $maxPages) {
             $payload = $this->ampiPropertyApi->searchRemote(array_filter([
                 'office_id' => $options['office_id'] ?? config('services.ampi.sync.office_id'),
                 'page' => $page,
@@ -35,6 +40,17 @@ class AmpiPropertySyncService
 
             if (! is_array($payload)) {
                 break;
+            }
+
+            $pages++;
+            $payloadTotal = $this->resolveTotal($payload);
+
+            if ($payloadTotal !== null) {
+                if ($remoteTotal !== null && $remoteTotal !== $payloadTotal) {
+                    $catalogTotalIsStable = false;
+                }
+
+                $remoteTotal ??= $payloadTotal;
             }
 
             $items = collect($payload['data'] ?? $payload)
@@ -49,21 +65,52 @@ class AmpiPropertySyncService
                 }
             }
 
-            $lastPage = $this->resolveLastPage($payload, $page);
-            $page++;
-        } while ($page <= $lastPage && $page <= $maxPages);
+            $lastPage = $this->resolveLastPage($payload);
 
-        if (($options['deactivate_missing'] ?? false) && $seenMlsIds !== []) {
-            AmpiProperty::query()
-                ->whereNotIn('mls_id', $seenMlsIds)
-                ->update(['is_active' => false]);
+            if ($lastPage === null) {
+                break;
+            }
+
+            if ($page >= $lastPage) {
+                $complete = true;
+
+                break;
+            }
+
+            $page++;
         }
 
-        return [
-            'success' => $synced > 0,
+        $seenMlsIds = array_values(array_unique($seenMlsIds));
+        $deleteMissing = (bool) ($options['delete_missing'] ?? false);
+        $catalogCountMatches = $remoteTotal !== null && count($seenMlsIds) === $remoteTotal;
+        $safeToDelete = $startingPage === 1 && $catalogTotalIsStable && $catalogCountMatches;
+        $success = $complete && $seenMlsIds !== [] && (! $deleteMissing || $safeToDelete);
+
+        if ($deleteMissing && $success) {
+            $missingProperties = AmpiProperty::query()
+                ->whereNotIn('mls_id', $seenMlsIds);
+
+            $officeId = $options['office_id'] ?? config('services.ampi.sync.office_id');
+
+            if (filled($officeId)) {
+                $missingProperties->where('office_id', $officeId);
+            }
+
+            $deleted = $missingProperties->delete();
+        }
+
+        $result = [
+            'success' => $success,
+            'complete' => $complete,
             'synced' => $synced,
-            'pages' => max(0, $page - 1),
+            'pages' => $pages,
+            'deleted' => $deleted,
+            'remote_total' => $remoteTotal,
         ];
+
+        Log::log($success ? 'info' : 'warning', 'AMPI property sync finished.', $result);
+
+        return $result;
     }
 
     /**
@@ -125,16 +172,29 @@ class AmpiPropertySyncService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function resolveLastPage(array $payload, int $currentPage): int
+    private function resolveLastPage(array $payload): ?int
     {
-        return (int) (
+        $lastPage = (
             data_get($payload, 'meta.last_page')
             ?? data_get($payload, 'pagination.last_page')
             ?? data_get($payload, 'last_page')
             ?? data_get($payload, 'meta.total_pages')
             ?? data_get($payload, 'total_pages')
-            ?? $currentPage
         );
+
+        return is_numeric($lastPage) ? max(1, (int) $lastPage) : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveTotal(array $payload): ?int
+    {
+        $total = data_get($payload, 'meta.total')
+            ?? data_get($payload, 'pagination.total')
+            ?? data_get($payload, 'total');
+
+        return is_numeric($total) ? max(0, (int) $total) : null;
     }
 
     private function integer(mixed $value): ?int
